@@ -1,10 +1,10 @@
 #include <cstdlib>
 #include <iostream>
-#include <string_view>
+#include <string>
 
 int main(int argc, char** argv) {
   int samples = 100;
-  if (argc == 3 && std::string_view(argv[1]) == "--samples") {
+  if (argc == 3 && std::string(argv[1]) == "--samples") {
     samples = std::atoi(argv[2]);
   }
   if (samples <= 0) {

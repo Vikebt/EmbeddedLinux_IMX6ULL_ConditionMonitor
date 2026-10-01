@@ -15,7 +15,9 @@
 | `libcondition` 编译 | Host | PASS | MinGW GCC 7.3，`-Wall -Wextra -Wpedantic` |
 | 状态机单元测试 | Host | PASS | 正常、毛刺确认、冲击、倾斜、超时、NaN、时间倒退 |
 | CSV 回放 | Host | PASS | 5 条接受、0 条拒绝，状态 normal → impact → normal |
-| 完整 CMake/CTest | Host | PASS | ASCII 盘符映射下 3/3 tests passed（含 sysfs 夹具） |
+| Windows CMake/CTest | Host | PASS | ASCII 盘符映射下 2/2 tests passed（领域层与回放） |
+| Linux CMake/CTest | Host | PASS | WSL GCC 9.4，4/4 tests passed，含 epoll 模拟服务 |
+| `conditiond` ARM 交叉编译 | Source | PASS | Linaro GCC 4.9.4，`-std=c++14 -Werror`，生成 ARM EABI5 ELF |
 | IIO 驱动对象交叉编译 | Source | PASS | vendor Linux 4.1.15 头文件 + Linaro ARM GCC 4.9.4，`CC [M] icm20608_iio.o` |
 | 可加载 `.ko` 与目标内核联编 | Source | 未执行 | 当前 vendor `.config` 未启用 IIO buffer/trigger；需应用 defconfig fragment 后重编内核与模块 |
 | I.MX6ULL 实板加载与采样 | HIL | 未执行 | 需要开发板与 ICM20608 |

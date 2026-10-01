@@ -62,3 +62,19 @@ hrtimer 回调（原子上下文）
 
 SPI 传输可能睡眠，所以绝不能放进 hrtimer 回调。驱动还用 `available_scan_masks` 限定为完整七通道布局，清零对齐填充字节，避免把未初始化内核内存送到用户态。修改采样率时若 buffer 正在运行则返回 `-EBUSY`，保证 timer period 不被无锁并发修改。
 
+## 7. L5：单线程 epoll 服务收口
+
+`conditiond` 把三类事件注册到一个 epoll 实例：
+
+- IIO 字符设备：非阻塞读取 24 字节 scan，处理一次 read 返回多帧或残留半帧。
+- `timerfd`：周期检查数据是否超时；模拟模式还用另一个 timerfd 产生样本。
+- `signalfd`：将 SIGINT/SIGTERM 变成普通 fd 可读事件，统一走退出路径。
+
+文件描述符用不可复制、可移动的 RAII 类型管理。退出或异常时，局部对象按逆序析构：关闭 epoll/设备 fd，并由 `BufferGuard` 将 IIO buffer 关闭。这样无需信号处理器修改复杂共享状态，也无需为每个事件源创建线程。
+
+模拟模式仍走真实 epoll、timerfd 和状态机，只替换传感器输入，能够验证进程/文件描述符/事件循环知识；它不证明真实 IIO 数据格式与时序已经上板通过。
+
+## 8. 工具链取舍
+
+最初宿主实现使用 C++17 filesystem，但本地 I.MX6ULL Linaro GCC 4.9 无法提供该标准库。最终板端主体改为 C++14，sysfs 枚举使用 `opendir/readdir`，并以 `unique_ptr<DIR, Deleter>` 保留 RAII；只有宿主测试夹具使用 C++17 filesystem。这个取舍不是退步，而是明确区分“产品目标工具链”和“测试便利性”。
+

@@ -5,7 +5,11 @@ add_test(NAME condition-monitor COMMAND test-condition-monitor)
 add_test(NAME replay-fixture
   COMMAND condition-replay ${CMAKE_CURRENT_SOURCE_DIR}/data/normal_then_impact.csv)
 
-add_executable(test-iio-sysfs test_iio_sysfs.cpp)
-target_link_libraries(test-iio-sysfs PRIVATE iio_adapter)
-add_test(NAME iio-sysfs COMMAND test-iio-sysfs)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_executable(test-iio-sysfs test_iio_sysfs.cpp)
+  target_compile_features(test-iio-sysfs PRIVATE cxx_std_17)
+  target_link_libraries(test-iio-sysfs PRIVATE iio_adapter)
+  add_test(NAME iio-sysfs COMMAND test-iio-sysfs)
+  add_test(NAME conditiond-simulated COMMAND conditiond --simulate --samples 30)
+endif()
 

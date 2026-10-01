@@ -16,4 +16,9 @@
 | 为什么 hrtimer 里不能读 SPI？ | `icm20608_timer_callback` / `icm20608_trigger_handler` | hrtimer 在原子上下文，SPI 可能睡眠；回调只触发 IIO，真正读取在线程化 poll handler |
 | 中断上半部/下半部思想怎样落地？ | 软件 trigger → threaded handler | 快路径只记录事件并调度，慢路径完成总线 I/O 和 buffer push |
 | 如何防止内核信息泄漏？ | `st->scan` 与 `memset` | IIO 时间戳要求 8 字节对齐，14 字节传感器数据后有 padding；push 前清零整个 scan buffer |
+| 进程怎样同时等待设备、定时器和信号？ | `conditiond` epoll loop | 把 IIO fd、timerfd、signalfd 统一注册到 epoll，单线程阻塞等待，避免轮询与线程膨胀 |
+| 什么是非阻塞 I/O？怎样处理半包？ | `pending` 字节缓冲 | read 直到 EAGAIN；一次可收多 scan，末尾不足 24 字节的数据留到下一次事件 |
+| 如何保证 fd 和设备状态释放？ | `UniqueFd`、`BufferGuard` | RAII 逆序析构关闭 fd；正常退出和异常退出都尝试关闭 IIO buffer |
+| signal handler 为什么要谨慎？ | `signalfd` | 普通信号处理器只能调用 async-signal-safe 函数；阻塞信号后转成 fd 事件可复用正常控制流 |
+| 为什么没有强行用 C++17？ | 顶层 CMake、`libiio_adapter` | 目标 Linaro GCC 4.9 决定板端用 C++14；RAII/移动语义保留，filesystem 仅用于宿主测试 |
 

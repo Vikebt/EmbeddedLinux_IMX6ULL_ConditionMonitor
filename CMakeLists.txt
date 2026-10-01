@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(imx6ull_condition_monitor LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -11,9 +11,13 @@ endif()
 
 add_compile_options(-Wall -Wextra -Wpedantic)
 
-enable_testing()
+include(CTest)
 add_subdirectory(libcondition)
-add_subdirectory(libiio)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_subdirectory(libiio)
+endif()
 add_subdirectory(apps)
-add_subdirectory(tests)
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif()
 

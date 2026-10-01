@@ -8,7 +8,8 @@
 
 namespace {
 bool parseSample(const std::string& line, condition::Sample* sample) {
-  std::array<double, 8> values{};
+  std::array<double, 8> values;
+  values.fill(0.0);
   std::stringstream input(line);
   std::string field;
   for (std::size_t index = 0; index < values.size(); ++index) {

@@ -1,0 +1,13 @@
+[Unit]
+Description=I.MX6ULL equipment condition monitor
+After=local-fs.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/conditiond
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
+

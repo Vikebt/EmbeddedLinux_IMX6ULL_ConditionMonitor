@@ -1,30 +1,32 @@
 #pragma once
 
 #include <string>
-
-#if defined(__GNUC__) && !defined(__clang__) && __GNUC__ < 8
-#include <experimental/filesystem>
-namespace iio_filesystem = std::experimental::filesystem;
-#else
-#include <filesystem>
-namespace iio_filesystem = std::filesystem;
-#endif
+#include <utility>
 
 namespace iio_adapter {
 
 struct Device {
-  iio_filesystem::path sysfs_path;
-  iio_filesystem::path character_path;
-  unsigned int index{};
+  std::string sysfs_path;
+  std::string character_path;
+  unsigned int index;
+
+  Device() : index(0) {}
+  Device(std::string sysfs, std::string character, unsigned int number)
+      : sysfs_path(std::move(sysfs)),
+        character_path(std::move(character)),
+        index(number) {}
 };
 
 struct BufferConfig {
-  unsigned int sampling_hz{100};
-  unsigned int length{128};
+  unsigned int sampling_hz;
+  unsigned int length;
+
+  BufferConfig(unsigned int rate = 100, unsigned int buffer_length = 128)
+      : sampling_hz(rate), length(buffer_length) {}
 };
 
-Device findDevice(const iio_filesystem::path& iio_root,
-                  const iio_filesystem::path& dev_root,
+Device findDevice(const std::string& iio_root,
+                  const std::string& dev_root,
                   const std::string& expected_name);
 
 void configureBuffer(const Device& device, const BufferConfig& config);

@@ -1,11 +1,13 @@
 #include "iio_adapter/iio_sysfs.h"
 
 #include <chrono>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
 
 namespace {
+namespace fs = std::filesystem;
 int failures = 0;
 void expect(bool ok, const char* message) {
   if (!ok) {
@@ -13,11 +15,11 @@ void expect(bool ok, const char* message) {
     ++failures;
   }
 }
-void put(const iio_filesystem::path& path, const std::string& value = "0") {
-  iio_filesystem::create_directories(path.parent_path());
+void put(const fs::path& path, const std::string& value = "0") {
+  fs::create_directories(path.parent_path());
   std::ofstream(path.string()) << value;
 }
-std::string get(const iio_filesystem::path& path) {
+std::string get(const fs::path& path) {
   std::ifstream input(path.string());
   std::string value;
   input >> value;
@@ -28,7 +30,7 @@ std::string get(const iio_filesystem::path& path) {
 int main() {
   const auto unique = std::to_string(
       std::chrono::steady_clock::now().time_since_epoch().count());
-  const auto root = iio_filesystem::temp_directory_path() /
+  const auto root = fs::temp_directory_path() /
                     ("condition-iio-test-" + unique);
   const auto device_path = root / "sys" / "iio_device7";
   const auto scan = device_path / "scan_elements";
@@ -45,10 +47,11 @@ int main() {
   }
 
   try {
-    const auto device = iio_adapter::findDevice(root / "sys", root / "dev",
+    const auto device = iio_adapter::findDevice((root / "sys").string(),
+                                                 (root / "dev").string(),
                                                  "icm20608");
     expect(device.index == 7, "device index is parsed");
-    expect(device.character_path.filename() == "iio:device7",
+    expect(fs::path(device.character_path).filename() == "iio:device7",
            "character device path uses IIO ABI name");
     iio_adapter::configureBuffer(device, {100, 64});
     expect(get(device_path / "sampling_frequency") == "100", "rate configured");
@@ -63,7 +66,7 @@ int main() {
   }
 
   std::error_code cleanup_error;
-  iio_filesystem::remove_all(root, cleanup_error);
+  fs::remove_all(root, cleanup_error);
   return failures == 0 ? 0 : 1;
 }
 

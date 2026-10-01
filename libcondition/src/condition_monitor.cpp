@@ -82,7 +82,7 @@ Assessment Monitor::checkTimeout(std::int64_t now_ns) const {
   return result;
 }
 
-std::string_view toString(State state) {
+const char* toString(State state) {
   switch (state) {
     case State::kNormal: return "normal";
     case State::kTilted: return "tilted";

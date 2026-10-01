@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <string_view>
 
 namespace condition {
 
@@ -49,7 +48,7 @@ class Monitor {
   bool has_sample_{};
 };
 
-std::string_view toString(State state);
+const char* toString(State state);
 
 }  // namespace condition
 
