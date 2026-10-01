@@ -47,3 +47,18 @@
 
 `libiio_adapter` 接收可注入的 sysfs/dev 根目录，因此在 PC 临时目录中也能验证设备发现、设备号解析、配置顺序的最终状态和关闭行为。
 
+## 6. L4：定时器只发通知，睡眠总线放在线程上下文
+
+开发板原理图没有为 ICM20608 提供可用数据就绪中断，因此驱动注册一个基于 hrtimer 的 IIO trigger。关键上下文边界是：
+
+```text
+hrtimer 回调（原子上下文）
+    └─ iio_trigger_poll()          只通知，不访问 SPI
+          └─ IIO threaded handler（可睡眠上下文）
+                 ├─ regmap_bulk_read() 一次读取 14 字节
+                 ├─ 添加时间戳并 push 到 IIO buffer
+                 └─ iio_trigger_notify_done()
+```
+
+SPI 传输可能睡眠，所以绝不能放进 hrtimer 回调。驱动还用 `available_scan_masks` 限定为完整七通道布局，清零对齐填充字节，避免把未初始化内核内存送到用户态。修改采样率时若 buffer 正在运行则返回 `-EBUSY`，保证 timer period 不被无锁并发修改。
+

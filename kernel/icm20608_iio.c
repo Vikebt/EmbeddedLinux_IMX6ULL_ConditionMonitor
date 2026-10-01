@@ -2,14 +2,20 @@
 /* ICM20608 SPI IIO driver, scoped to ALIENTEK Linux 4.1.15. */
 
 #include <linux/delay.h>
+#include <linux/hrtimer.h>
 #include <linux/module.h>
 #include <linux/mutex.h>
 #include <linux/of.h>
 #include <linux/regmap.h>
 #include <linux/spi/spi.h>
+#include <linux/string.h>
 #include <asm/unaligned.h>
 
 #include <linux/iio/iio.h>
+#include <linux/iio/buffer.h>
+#include <linux/iio/trigger.h>
+#include <linux/iio/trigger_consumer.h>
+#include <linux/iio/triggered_buffer.h>
 
 #define ICM20608_REG_SMPLRT_DIV      0x19
 #define ICM20608_REG_CONFIG          0x1a
@@ -31,6 +37,10 @@ struct icm20608_state {
 	struct regmap *map;
 	struct mutex lock;
 	unsigned int sampling_hz;
+	struct iio_trigger *trigger;
+	struct hrtimer timer;
+	ktime_t period;
+	u8 scan[24] __aligned(8);
 };
 
 static const struct regmap_config icm20608_regmap_config = {
@@ -53,6 +63,7 @@ static int icm20608_set_rate(struct icm20608_state *st, unsigned int hz)
 		return -EIO;
 
 	st->sampling_hz = hz;
+	st->period = ktime_set(0, NSEC_PER_SEC / hz);
 	return 0;
 }
 
@@ -79,6 +90,8 @@ static int icm20608_read_raw(struct iio_dev *indio_dev,
 
 	switch (mask) {
 	case IIO_CHAN_INFO_RAW:
+		if (iio_buffer_enabled(indio_dev))
+			return -EBUSY;
 		mutex_lock(&st->lock);
 		ret = icm20608_read_be16(st, chan->address, val);
 		mutex_unlock(&st->lock);
@@ -126,6 +139,8 @@ static int icm20608_write_raw(struct iio_dev *indio_dev,
 	(void)chan;
 	if (mask != IIO_CHAN_INFO_SAMP_FREQ || val2 != 0 || val <= 0)
 		return -EINVAL;
+	if (iio_buffer_enabled(indio_dev))
+		return -EBUSY;
 
 	mutex_lock(&st->lock);
 	ret = icm20608_set_rate(st, val);
@@ -133,33 +148,96 @@ static int icm20608_write_raw(struct iio_dev *indio_dev,
 	return ret;
 }
 
-#define ICM20608_AXIS_CHANNEL(_type, _mod, _addr) {                 \
+#define ICM20608_AXIS_CHANNEL(_type, _mod, _addr, _scan) {          \
 	.type = (_type),                                              \
 	.modified = 1,                                                \
 	.channel2 = (_mod),                                           \
 	.address = (_addr),                                           \
-	.scan_index = -1,                                             \
+	.scan_index = (_scan),                                        \
+	.scan_type = {                                                \
+		.sign = 's', .realbits = 16, .storagebits = 16,          \
+		.endianness = IIO_BE,                                    \
+	},                                                             \
 	.info_mask_separate = BIT(IIO_CHAN_INFO_RAW),                 \
 	.info_mask_shared_by_type = BIT(IIO_CHAN_INFO_SCALE),         \
 	.info_mask_shared_by_all = BIT(IIO_CHAN_INFO_SAMP_FREQ),      \
 }
 
 static const struct iio_chan_spec icm20608_channels[] = {
-	ICM20608_AXIS_CHANNEL(IIO_ACCEL, IIO_MOD_X, ICM20608_REG_ACCEL_XOUT_H),
-	ICM20608_AXIS_CHANNEL(IIO_ACCEL, IIO_MOD_Y, ICM20608_REG_ACCEL_XOUT_H + 2),
-	ICM20608_AXIS_CHANNEL(IIO_ACCEL, IIO_MOD_Z, ICM20608_REG_ACCEL_XOUT_H + 4),
+	ICM20608_AXIS_CHANNEL(IIO_ACCEL, IIO_MOD_X, ICM20608_REG_ACCEL_XOUT_H, 0),
+	ICM20608_AXIS_CHANNEL(IIO_ACCEL, IIO_MOD_Y, ICM20608_REG_ACCEL_XOUT_H + 2, 1),
+	ICM20608_AXIS_CHANNEL(IIO_ACCEL, IIO_MOD_Z, ICM20608_REG_ACCEL_XOUT_H + 4, 2),
 	{
 		.type = IIO_TEMP,
 		.address = ICM20608_REG_TEMP_OUT_H,
-		.scan_index = -1,
+		.scan_index = 3,
+		.scan_type = {
+			.sign = 's', .realbits = 16, .storagebits = 16,
+			.endianness = IIO_BE,
+		},
 		.info_mask_separate = BIT(IIO_CHAN_INFO_RAW) |
 			BIT(IIO_CHAN_INFO_OFFSET) | BIT(IIO_CHAN_INFO_SCALE),
 		.info_mask_shared_by_all = BIT(IIO_CHAN_INFO_SAMP_FREQ),
 	},
-	ICM20608_AXIS_CHANNEL(IIO_ANGL_VEL, IIO_MOD_X, ICM20608_REG_GYRO_XOUT_H),
-	ICM20608_AXIS_CHANNEL(IIO_ANGL_VEL, IIO_MOD_Y, ICM20608_REG_GYRO_XOUT_H + 2),
-	ICM20608_AXIS_CHANNEL(IIO_ANGL_VEL, IIO_MOD_Z, ICM20608_REG_GYRO_XOUT_H + 4),
+	ICM20608_AXIS_CHANNEL(IIO_ANGL_VEL, IIO_MOD_X, ICM20608_REG_GYRO_XOUT_H, 4),
+	ICM20608_AXIS_CHANNEL(IIO_ANGL_VEL, IIO_MOD_Y, ICM20608_REG_GYRO_XOUT_H + 2, 5),
+	ICM20608_AXIS_CHANNEL(IIO_ANGL_VEL, IIO_MOD_Z, ICM20608_REG_GYRO_XOUT_H + 4, 6),
+	IIO_CHAN_SOFT_TIMESTAMP(7),
 };
+
+static const unsigned long icm20608_scan_masks[] = {
+	GENMASK(6, 0),
+	0,
+};
+
+static enum hrtimer_restart icm20608_timer_callback(struct hrtimer *timer)
+{
+	struct icm20608_state *st = container_of(timer, struct icm20608_state,
+						 timer);
+
+	/* Atomic context: only notify IIO.  SPI runs in the threaded handler. */
+	iio_trigger_poll(st->trigger);
+	hrtimer_forward_now(timer, st->period);
+	return HRTIMER_RESTART;
+}
+
+static int icm20608_trigger_set_state(struct iio_trigger *trigger, bool enable)
+{
+	struct iio_dev *indio_dev = iio_trigger_get_drvdata(trigger);
+	struct icm20608_state *st = iio_priv(indio_dev);
+
+	if (enable)
+		hrtimer_start(&st->timer, st->period, HRTIMER_MODE_REL);
+	else
+		hrtimer_cancel(&st->timer);
+	return 0;
+}
+
+static const struct iio_trigger_ops icm20608_trigger_ops = {
+	.owner = THIS_MODULE,
+	.set_trigger_state = icm20608_trigger_set_state,
+};
+
+static irqreturn_t icm20608_trigger_handler(int irq, void *private)
+{
+	struct iio_poll_func *poll = private;
+	struct iio_dev *indio_dev = poll->indio_dev;
+	struct icm20608_state *st = iio_priv(indio_dev);
+	int ret;
+
+	(void)irq;
+	mutex_lock(&st->lock);
+	memset(st->scan, 0, sizeof(st->scan));
+	ret = regmap_bulk_read(st->map, ICM20608_REG_ACCEL_XOUT_H,
+			       st->scan, 14);
+	mutex_unlock(&st->lock);
+	if (!ret)
+		iio_push_to_buffers_with_timestamp(indio_dev, st->scan,
+					   poll->timestamp);
+
+	iio_trigger_notify_done(indio_dev->trig);
+	return IRQ_HANDLED;
+}
 
 static const struct iio_info icm20608_info = {
 	.read_raw = icm20608_read_raw,
@@ -212,6 +290,8 @@ static int icm20608_probe(struct spi_device *spi)
 
 	st = iio_priv(indio_dev);
 	mutex_init(&st->lock);
+	hrtimer_init(&st->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	st->timer.function = icm20608_timer_callback;
 	st->map = devm_regmap_init_spi(spi, &icm20608_regmap_config);
 	if (IS_ERR(st->map))
 		return PTR_ERR(st->map);
@@ -220,9 +300,10 @@ static int icm20608_probe(struct spi_device *spi)
 	indio_dev->dev.parent = &spi->dev;
 	indio_dev->name = "icm20608";
 	indio_dev->info = &icm20608_info;
-	indio_dev->modes = INDIO_DIRECT_MODE;
+	indio_dev->modes = INDIO_DIRECT_MODE | INDIO_BUFFER_TRIGGERED;
 	indio_dev->channels = icm20608_channels;
 	indio_dev->num_channels = ARRAY_SIZE(icm20608_channels);
+	indio_dev->available_scan_masks = icm20608_scan_masks;
 
 	ret = icm20608_hw_init(st);
 	if (ret) {
@@ -230,19 +311,52 @@ static int icm20608_probe(struct spi_device *spi)
 		return ret;
 	}
 
+	st->trigger = iio_trigger_alloc("%s-%s-hrtimer", indio_dev->name,
+					dev_name(&spi->dev));
+	if (!st->trigger)
+		return -ENOMEM;
+	st->trigger->dev.parent = &spi->dev;
+	st->trigger->ops = &icm20608_trigger_ops;
+	iio_trigger_set_drvdata(st->trigger, indio_dev);
+
+	ret = iio_trigger_register(st->trigger);
+	if (ret)
+		goto error_free_trigger;
+	indio_dev->trig = iio_trigger_get(st->trigger);
+
+	ret = iio_triggered_buffer_setup(indio_dev, &iio_pollfunc_store_time,
+					 icm20608_trigger_handler, NULL);
+	if (ret)
+		goto error_unregister_trigger;
+
 	ret = iio_device_register(indio_dev);
 	if (ret)
-		return ret;
+		goto error_cleanup_buffer;
 
 	dev_info(&spi->dev, "ICM20608 registered as IIO device\n");
 	return 0;
+
+error_cleanup_buffer:
+	iio_triggered_buffer_cleanup(indio_dev);
+error_unregister_trigger:
+	iio_trigger_put(indio_dev->trig);
+	indio_dev->trig = NULL;
+	iio_trigger_unregister(st->trigger);
+error_free_trigger:
+	iio_trigger_free(st->trigger);
+	return ret;
 }
 
 static int icm20608_remove(struct spi_device *spi)
 {
 	struct iio_dev *indio_dev = spi_get_drvdata(spi);
+	struct icm20608_state *st = iio_priv(indio_dev);
 
 	iio_device_unregister(indio_dev);
+	hrtimer_cancel(&st->timer);
+	iio_triggered_buffer_cleanup(indio_dev);
+	iio_trigger_unregister(st->trigger);
+	iio_trigger_free(st->trigger);
 	return 0;
 }
 

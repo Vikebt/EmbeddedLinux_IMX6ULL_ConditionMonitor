@@ -13,4 +13,7 @@
 | 如何处理脏数据？ | `finite`、时间戳检查、`checkTimeout` | NaN、时间倒退、数据超时进入显式故障态，而不是继续沿用旧值 |
 | sysfs 是什么？为什么不用固定设备号？ | `findDevice` | sysfs 是内核对象/属性的文本视图；枚举 `name` 可适应 probe 顺序变化 |
 | 多个 sysfs 写入如何处理失败？ | `configureBuffer` | 先停 buffer、配置、最后启用；异常路径回到 disabled，形成最小可恢复事务 |
+| 为什么 hrtimer 里不能读 SPI？ | `icm20608_timer_callback` / `icm20608_trigger_handler` | hrtimer 在原子上下文，SPI 可能睡眠；回调只触发 IIO，真正读取在线程化 poll handler |
+| 中断上半部/下半部思想怎样落地？ | 软件 trigger → threaded handler | 快路径只记录事件并调度，慢路径完成总线 I/O 和 buffer push |
+| 如何防止内核信息泄漏？ | `st->scan` 与 `memset` | IIO 时间戳要求 8 字节对齐，14 字节传感器数据后有 padding；push 前清零整个 scan buffer |
 
