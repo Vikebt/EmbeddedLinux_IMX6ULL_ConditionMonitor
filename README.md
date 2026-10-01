@@ -15,7 +15,7 @@
 | L4 | IIO 缓冲采样 | hrtimer 只触发 threaded poll，SPI 不进原子上下文 |
 | L5 | epoll 服务 | 传感器、timerfd、signalfd 单线程事件循环 |
 
-构建逻辑、代码证据和验证边界分别见 [BUILD_LOGIC.md](docs/BUILD_LOGIC.md)、[INTERVIEW_EVIDENCE.md](docs/INTERVIEW_EVIDENCE.md) 与 [VALIDATION.md](docs/VALIDATION.md)。
+构建逻辑、代码证据和验证边界分别见 [BUILD_LOGIC.md](docs/BUILD_LOGIC.md)、[INTERVIEW_EVIDENCE.md](docs/INTERVIEW_EVIDENCE.md) 与 [VALIDATION.md](docs/VALIDATION.md)。五个作品怎样共同回答高频八股，见 [五项目结合式面试手册](docs/FIVE_PROJECT_INTERVIEW_HANDBOOK.md) 和 [五项目验证矩阵](docs/FIVE_PROJECT_VALIDATION_MATRIX.md)。
 
 ## 宿主机构建
 
@@ -30,6 +30,8 @@ ctest --test-dir build --output-on-failure
 内核模块目标明确限定为正点原子 i.MX6ULL vendor Linux 4.1.15；主线内核 API 不在本仓库承诺范围内。
 
 旧版 CTest 不支持 `--test-dir` 时，改为 `cd build && ctest --output-on-failure`。
+
+也可以运行 `scripts/validate_userspace.sh` 一次完成 Linux 宿主测试与模拟服务验证；设置 `CROSS_COMPILE` 后会继续执行 ARM 用户态交叉构建。
 
 ## ARM 用户态交叉编译
 

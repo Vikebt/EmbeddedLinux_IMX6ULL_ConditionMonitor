@@ -26,3 +26,5 @@ Windows 下 MinGW Makefiles 无法可靠解析仓库路径中的中文字符；�
 
 驱动对象验证使用 `scripts/validate_driver_source.sh`。脚本通过编译宏补齐当前 `.config` 中尚未启用的 IIO trigger 声明，只证明代码与 4.1.15 API/ARM 编译器兼容；它不等同于可加载模块验证，文档刻意保留这一边界。
 
+Linux 用户态验证可通过 `scripts/validate_userspace.sh` 复现。脚本兼容随当前 WSL 发行版安装的旧 CTest：进入构建目录后执行测试，而不依赖较新的 `ctest --test-dir` 参数；提供 `CROSS_COMPILE` 时还会交叉构建并用 `file` 打印产物架构。
+
