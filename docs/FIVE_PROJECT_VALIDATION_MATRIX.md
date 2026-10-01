@@ -30,4 +30,3 @@ Windows 上使用的 MinGW 7.3 无法可靠处理构建规则中的中文绝对�
 4. 先运行 `conditiond --simulate`，再运行真实 IIO buffer 模式。
 5. 依次测试静置、单点毛刺、持续倾斜、连续冲击、停流/拔除、SIGTERM 和 8 小时长稳。
 6. 记录内核 commit、DTB、rootfs、工具链、采样率、丢帧/CPU/内存，再更新本矩阵。
-
