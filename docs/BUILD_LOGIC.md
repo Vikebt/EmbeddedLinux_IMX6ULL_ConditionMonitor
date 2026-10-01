@@ -36,3 +36,14 @@
 
 模拟器生成固定冲击序列，回放器读取 CSV 并只打印状态变化。相同输入产生相同输出，便于调试和面试现场演示；它不冒充真实传感器噪声模型。
 
+## 5. L3：把 sysfs 配置做成可回滚事务
+
+设备号可能随启动顺序变化，所以用户态遍历 `/sys/bus/iio/devices` 并读取 `name`，而不是写死 `iio:device0`。配置顺序也刻意固定：
+
+1. 先写 `buffer/enable=0`，禁止边采样边改扫描布局。
+2. 配置 `sampling_frequency`、buffer length 和所有 scan element。
+3. 最后写 `buffer/enable=1`。
+4. 任一步失败都尝试恢复 `enable=0`，避免留下“部分配置但仍在运行”的设备。
+
+`libiio_adapter` 接收可注入的 sysfs/dev 根目录，因此在 PC 临时目录中也能验证设备发现、设备号解析、配置顺序的最终状态和关闭行为。
+

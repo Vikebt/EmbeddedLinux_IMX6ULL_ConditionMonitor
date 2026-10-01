@@ -13,6 +13,7 @@ add_compile_options(-Wall -Wextra -Wpedantic)
 
 enable_testing()
 add_subdirectory(libcondition)
+add_subdirectory(libiio)
 add_subdirectory(apps)
 add_subdirectory(tests)
 
