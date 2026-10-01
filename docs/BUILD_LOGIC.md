@@ -13,3 +13,15 @@
 
 后续章节会随 L1–L5 逐层补齐，每层都给出为什么这样设计、如何验证、面试时如何表达。
 
+## 3. L1：先让设备成为标准 IIO 设备
+
+驱动不再复刻学习例程中的私有字符设备 ABI，而是使用 Linux IIO：
+
+1. 设备树负责描述 ECSPI3 上的芯片，`compatible` 只做驱动匹配。
+2. SPI core 调用 `probe`，驱动用 devm 分配 IIO 设备和 regmap。
+3. `WHO_AM_I` 失败直接终止 probe，避免“节点存在就算成功”。
+4. regmap 统一寄存器读写与 SPI 读标志，`read_raw` 只负责 IIO 语义。
+5. `remove` 先从 IIO core 注销；devm 资源随后按生命周期自动回收。
+
+这一步先实现直读和采样率 sysfs，便于把“总线、驱动模型、设备树、sysfs、IIO ABI”串成一条可解释链路。缓冲采样留到 L4，防止一次引入过多机制。
+

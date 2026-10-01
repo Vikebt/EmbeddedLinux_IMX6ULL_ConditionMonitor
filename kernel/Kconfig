@@ -1,0 +1,8 @@
+config ICM20608_IIO
+	tristate "ICM20608 SPI IIO driver for i.MX6ULL teaching board"
+	depends on SPI && IIO
+	select REGMAP_SPI
+	help
+	  IIO driver for an ICM20608 connected over SPI.  The implementation is
+	  intentionally scoped to the ALIENTEK i.MX6ULL Linux 4.1.15 tree.
+
