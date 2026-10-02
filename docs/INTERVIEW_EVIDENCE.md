@@ -2,6 +2,8 @@
 
 本文件只把已经落到代码、测试或明确验证步骤的知识点列为项目证据。硬件未验证项会保留为待办，不使用“已部署”“已量产”等表述。
 
+完整学习材料见 [五项目面试讲义](interview-handbook/README.md)，本项目重点对应 [Linux 驱动章](interview-handbook/05-linux-driver.md)、[P5 项目故事](interview-handbook/06-project-stories.md#p5imx6ull-设备姿态与异常冲击监测器) 和 [实验手册](interview-handbook/09-experiments.md)。
+
 | 面试问题 | 代码证据 | 可回答的工程结论 |
 | --- | --- | --- |
 | 设备树和驱动怎样匹配？ | `deploy/*.dtsi`、`icm20608_of_match` | SPI 控制器枚举子节点，OF compatible 匹配到 `spi_driver`，随后进入 probe |

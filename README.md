@@ -15,7 +15,16 @@
 | L4 | IIO 缓冲采样 | hrtimer 只触发 threaded poll，SPI 不进原子上下文 |
 | L5 | epoll 服务 | 传感器、timerfd、signalfd 单线程事件循环 |
 
-构建逻辑、代码证据和验证边界分别见 [BUILD_LOGIC.md](docs/BUILD_LOGIC.md)、[INTERVIEW_EVIDENCE.md](docs/INTERVIEW_EVIDENCE.md) 与 [VALIDATION.md](docs/VALIDATION.md)。五个作品怎样共同回答高频八股，见 [五项目结合式面试手册](docs/FIVE_PROJECT_INTERVIEW_HANDBOOK.md) 和 [五项目验证矩阵](docs/FIVE_PROJECT_VALIDATION_MATRIX.md)。
+构建逻辑、代码证据和验证边界分别见 [BUILD_LOGIC.md](docs/BUILD_LOGIC.md)、[INTERVIEW_EVIDENCE.md](docs/INTERVIEW_EVIDENCE.md) 与 [VALIDATION.md](docs/VALIDATION.md)。
+
+## 五项目面试学习入口
+
+- [模块化五项目面试讲义](docs/interview-handbook/README.md)：216 题分级映射、九段式详解、项目故事、追问树、实验、速记卡和术语表。
+- [PDF 版讲义](output/Five-Project-Embedded-Interview-Handbook.pdf)：适合连续阅读、打印和离线复习。
+- [五项目验证矩阵](docs/FIVE_PROJECT_VALIDATION_MATRIX.md)：区分 `CODE/HOST/CROSS/HIL/TODO-HIL`。
+- [旧版单文件手册](docs/FIVE_PROJECT_INTERVIEW_HANDBOOK.md)：保留旧链接，作为快速摘要和兼容入口。
+
+讲义的固定版本保存在 [`study-step-7-detailed-handbook`](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/tree/study-step-7-detailed-handbook/docs/interview-handbook)，日常更新以 `main` 为准。
 
 ## 宿主机构建
 

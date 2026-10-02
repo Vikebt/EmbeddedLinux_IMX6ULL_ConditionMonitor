@@ -1,5 +1,7 @@
 # 五项目结合式嵌入式面试手册
 
+> **兼容入口**：本文件保留原有链接和快速摘要。完整新版已拆分为 [模块化五项目面试讲义](interview-handbook/README.md)，包含原资料 216 题分级映射、九段式详解、40 组追问树、可复现实验、速记卡和术语表；可打印版本见 [PDF](../output/Five-Project-Embedded-Interview-Handbook.pdf)。固定版本见 [`study-step-7-detailed-handbook`](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/tree/study-step-7-detailed-handbook/docs/interview-handbook)。
+
 > 使用范围：手持体温检测仪、智能送药小车、三维 LiDAR 感知、多源光电数据融合、I.MX6ULL 设备姿态与异常冲击监测器。
 >
 > 本手册依据《嵌入式八股-赛博二哈》中的高频主题重新组织，但不复刻原文。每个结论都优先绑定到仓库中的代码、测试或明确的验证边界。

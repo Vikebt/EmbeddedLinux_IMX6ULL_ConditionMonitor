@@ -10,4 +10,5 @@ Module.symvers
 compile_commands.json
 *.csv
 !tests/data/*.csv
+output/pdf-render/
 
