@@ -24,11 +24,11 @@
 
 | 项目 | 产品问题 | 主要知识点 | 最硬的代码证据 | 当前验证边界 |
 | --- | --- | --- | --- | --- |
-| 手持体温检测仪 | 多源测温、身份确认、结果存储与上传 | FreeRTOS 任务、队列、mutex、临界区、CRC、Flash 一致性 | `prvSendLatest`、`FusionPolicy_IsMeasurementReady`、`FlashStore_Load/Save` | 融合策略与 CRC 已做主机测试；外设时序未做 HIL |
-| 智能送药小车 | 视觉帧、称重与电机控制的确定性协作 | ISR/任务边界、单写者、非阻塞 FSM、超时、Tick 回绕 | USART ISR、`vControlTask`、`CartState_Step`、HX711 超时 | FSM 与回绕已测试；PID/转向时长和标定未实车验证 |
-| 三维 LiDAR 感知 | UDP/PCAP 数据进入并行点云流水线 | socket、epoll、RAII、有界队列、条件变量、反压、优雅退出 | `InputSocket`、`BoundedQueue`、`PipelineController::stop` | 队列策略已测试；ROS/PCL 与设备吞吐未实机验证 |
-| 多源光电数据融合 | ROS、Qt、串口、RTSP 和点云并发运行 | 进程/线程、join、atomic/mutex、快照、重连退避、资源生命周期 | `QNode`、各传感器 `latest()`、`RTSPCapture::stop_thread` | 退避策略与源码一致性已验证；全依赖集成未验证 |
-| I.MX6ULL 状态监测器 | SPI IMU 的标准驱动、缓冲采样和告警服务 | 设备树、SPI、regmap、IIO、sysfs、hrtimer、线程化处理、epoll/signalfd/timerfd、RAII | `icm20608_probe`、trigger handler、`conditiond`、`Monitor::update` | Host 与 ARM 源码交叉编译通过；`.ko`/实板 HIL 未执行 |
+| 手持体温检测仪 | 多源测温、身份确认、结果存储与上传 | FreeRTOS 任务、队列、mutex、临界区、CRC、Flash 一致性 | `prvSendLatest`、`FusionPolicy_IsMeasurementReady`、`FlashStore_Load/Save` | 宿主 2/2、ARMCC 完整构建通过；外设时序与掉电恢复未做 HIL |
+| 智能送药小车 | 视觉帧、称重与电机控制的确定性协作 | ISR/任务边界、单写者、非阻塞 FSM、超时、Tick 回绕 | USART ISR、`vControlTask`、`CartState_Step`、HX711 超时 | 宿主 1/1、ARMCC 完整构建通过；PID/转向时长和标定未实车验证 |
+| 三维 LiDAR 感知 | UDP/PCAP 数据进入并行点云流水线 | socket、epoll、RAII、有界队列、条件变量、反压、优雅退出 | `InputSocket`、`BoundedQueue`、`PipelineController::stop` | 宿主测试与 ROS Noetic 完整编译通过；节点运行和设备吞吐未验证 |
+| 多源光电数据融合 | ROS、Qt、串口、RTSP 和点云并发运行 | 进程/线程、join、atomic/mutex、快照、重连退避、资源生命周期 | `QNode`、各传感器 `latest()`、`RTSPCapture::stop_thread` | 重连/YAML 回滚测试与 ROS/Qt 四包完整编译通过；串口/RTSP 运行联调未验证 |
+| I.MX6ULL 状态监测器 | SPI IMU 的标准驱动、缓冲采样和告警服务 | 设备树、SPI、regmap、IIO、sysfs、hrtimer、线程化处理、epoll/signalfd/timerfd、RAII | `icm20608_probe`、trigger handler、`conditiond`、`Monitor::update` | Host、ARM 用户态及隔离 vendor 内核 `.ko` 联编通过；目标板加载和采样未验证 |
 
 这张表也是项目取舍：前四个项目不强行加入内核驱动；第五个项目不重复 ROS/Qt，而补齐内核到用户态的完整纵向链路。
 
@@ -212,7 +212,7 @@ sysfs 是内核对象及属性的文本视图，适合配置和低频状态；`/
 - Source：用目标 ARM 工具链和 vendor 4.1.15 内核头编译，证明语法/API/架构兼容。
 - HIL：证明真实 SPI、DT、时序、噪声、长稳和卸载路径。
 
-本项目目前只完成前两级；当前 vendor defconfig 未启用 IIO buffer/trigger，因此不把单个对象编译写成“模块已上板”。
+本项目完成 Host、ARM 用户态交叉编译与隔离 vendor 4.1.15 内核模块联编；原始 vendor defconfig 缺少 IIO buffer/trigger 依赖，已在隔离内核副本中通过 Kconfig 集成补齐。尚未完成 HIL，不能把 `.ko` 可编译写成“模块已上板”。
 
 ## 8. 30 个高频追问速答
 
@@ -267,7 +267,7 @@ sysfs 是内核对象及属性的文本视图，适合配置和低频状态；`/
 
 ### 9.5 I.MX6ULL 状态监测器
 
-> 这是基于正点原子 I.MX6ULL 学习经历构建的可解释 Linux 驱动项目。ICM20608 通过 SPI/regmap 接入 IIO，hrtimer 只触发采样，可能睡眠的 SPI 读取在线程化 handler 完成；用户态按 sysfs 名称发现设备，用 epoll 统一 IIO、timerfd 和 signalfd，再由可主机测试的状态机判断倾斜、冲击和失联。Linux 宿主 4/4 测试、ARM 用户态交叉编译和 vendor 4.1.15 驱动对象编译已通过，`.ko` 与实板采样明确留作 HIL。
+> 这是基于正点原子 I.MX6ULL 学习经历构建的可解释 Linux 驱动项目。ICM20608 通过 SPI/regmap 接入 IIO，hrtimer 只触发采样，可能睡眠的 SPI 读取在线程化 handler 完成；用户态按 sysfs 名称发现设备，用 epoll 统一 IIO、timerfd 和 signalfd，再由可主机测试的状态机判断倾斜、冲击和失联。Linux 宿主 5/5 测试、ARM 用户态交叉编译和隔离 vendor 4.1.15 内核 `.ko` 联编已通过，目标板加载与实板采样明确留作 HIL。
 
 ## 10. 不要过度包装的内容
 
