@@ -153,11 +153,11 @@ metrics 快照与受控 shutdown
 | 有界队列 | [bounded_queue.h](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/blob/main/src/lslidar_ls_driver/include/lslidar_ls_driver/core/bounded_queue.h) | [study-step-2](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/blob/study-step-2-overload-policy/src/lslidar_ls_driver/include/lslidar_ls_driver/core/bounded_queue.h) |
 | 测试 | [test_bounded_queue.cpp](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/blob/main/src/lslidar_ls_driver/tests/host/test_bounded_queue.cpp) | 同路径 |
 
-证据等级：`CODE`、`HOST`；ROS/PCL 全量构建和 LS1550/Jetson 性能为 `TODO-HIL`。
+证据等级：`CODE`、`HOST`、`ROS-BUILD`；[ROS Noetic 完整 catkin 构建与四组 gtest](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/actions/runs/37119796557)已通过（18 测试、0 失败），ROS 节点运行和 LS1550/Jetson 性能仍为 `TODO-HIL`。
 
 ### 30 秒介绍
 
-> 这是 ROS1/PCL 的 LiDAR 数据接入与点云流水线。我重构了 UDP/epoll 生命周期、PCAP 边界检查和并发队列：所有 fd 失败路径可回收，级间队列有容量与 DropOldest/Block 策略，shutdown 进入条件变量谓词，线程可被唤醒并 join。宿主测试覆盖过载和关闭语义，没有设备时不声称真实吞吐和丢包率。
+> 这是 ROS1/PCL 的 LiDAR 数据接入与点云流水线。我重构了 UDP/epoll 生命周期、PCAP 边界检查和并发队列：所有 fd 失败路径可回收，级间队列有容量与 DropOldest/Block 策略，shutdown 进入条件变量谓词，线程可被唤醒并 join。宿主测试覆盖过载和关闭语义，ROS 工程的 18 项算法测试也已通过；没有设备时不声称真实吞吐和丢包率。
 
 ### 2 分钟展开
 
@@ -208,11 +208,11 @@ RTSP ----------┘          │
 | RTSP 退避 | [rtsp_capture.cpp](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/blob/main/src/mainwindow/src/rtsp_capture.cpp) | [study-step-2](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/blob/study-step-2-consistent-snapshots/src/mainwindow/src/rtsp_capture.cpp) |
 | 测试 | [host test](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/tree/main/src/mainwindow/tests/host) | 同路径 |
 
-证据等级：`CODE`、`HOST`；ROS/Qt/OpenCV/PCL/串口/RTSP 联调为 `TODO-HIL`。
+证据等级：`CODE`、`HOST`、`ROS-BUILD`；[Linux Debug/Release 宿主测试](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37121300009)各 3/3（退避、UDP 截断、YAML 回滚），[ROS Noetic/Qt 四包完整 catkin 构建](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37121299927)通过；ROS 节点运行与真实导航源/串口/RTSP 联调仍为 `TODO-HIL`。
 
 ### 30 秒介绍
 
-> 这是 ROS、Qt、RTSP、串口与点云融合应用。重构重点是线程生命周期和快照一致性：移除 detached 与混合回调调度，单值标志用 atomic，复合传感器结果用 mutex 整体复制；RTSP 使用封顶退避，点云落盘队列有容量。宿主测试覆盖退避，完整依赖环境和真实时间同步仍需目标系统验证。
+> 这是 ROS、Qt、RTSP、串口与点云融合应用。重构重点是线程生命周期和快照一致性：移除 detached 与混合回调调度，单值标志用 atomic，复合传感器结果用 mutex 整体复制；RTSP 使用封顶退避，点云落盘队列有容量。宿主测试覆盖退避、UDP 报文边界和配置回滚，完整 ROS/Qt 工程编译通过；节点运行、设备联调和真实时间同步仍需目标系统验证。
 
 ### 2 分钟展开
 
@@ -266,11 +266,11 @@ libcondition: tilt / impact / sensor_fault
 | L4 trigger/buffer | [driver](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/blob/main/kernel/icm20608_iio.c) | [study-step-4](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/blob/study-step-4-threaded-buffer/kernel/icm20608_iio.c) |
 | L5 epoll | [conditiond](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/blob/main/apps/conditiond.cpp) | [study-step-5](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/blob/study-step-5-epoll-service/apps/conditiond.cpp) |
 
-证据等级：`CODE`、`HOST`、`CROSS`；可加载 `.ko` 和实板采样为 `TODO-HIL`。
+证据等级：`CODE`、`HOST`、`CROSS`；隔离 vendor 内核 ARM `.ko` 联编已通过，目标板加载与实板采样为 `TODO-HIL`。
 
 ### 30 秒介绍
 
-> 这是我基于 I.MX6ULL 学习经历独立构建的 Linux 驱动作品。ICM20608 通过 SPI/regmap 接入 IIO，hrtimer 只发 trigger，可能睡眠的 bulk read 在线程化 handler；用户态按 sysfs name 找设备，用 epoll 统一 IIO、timerfd、signalfd，纯状态机判断倾斜、冲击和失联。Linux 4/4 测试、ARM 用户态和 vendor 4.1.15 驱动对象交叉编译通过，`.ko` 与实板仍明确待验证。
+> 这是我基于 I.MX6ULL 学习经历独立构建的 Linux 驱动作品。ICM20608 通过 SPI/regmap 接入 IIO，hrtimer 只发 trigger，可能睡眠的 bulk read 在线程化 handler；用户态按 sysfs name 找设备，用 epoll 统一 IIO、timerfd、signalfd，纯状态机判断倾斜、冲击和失联。Linux 宿主 5/5 测试、ARM 用户态交叉编译与隔离 vendor 4.1.15 内核 `.ko` 联编已通过；目标板加载和实板采样仍明确待验证。
 
 ### 2 分钟展开
 
@@ -292,8 +292,8 @@ libcondition: tilt / impact / sensor_fault
 | 并发边界 | FreeRTOS queue/mutex | ISR→queue→单控制任务 | thread+bounded queue | atomic/mutex snapshot | 单线程 epoll + threaded handler |
 | 过载策略 | 丢旧保新 | overwrite 最新值 | DropOldest/Block | 3 帧点云队列 | drain + pending |
 | 生命周期 | RTOS 创建断言/hooks | 传感器超时/FSM | shutdown+join | stop+join | RAII/devm |
-| 主要验证 | 融合/CRC host | FSM/tick host | queue host | backoff host | host+ARM cross+driver object |
-| 未验证 | 外设/WiFi | 实车参数 | ROS/设备吞吐 | 完整联调 | `.ko`/HIL |
+| 主要验证 | 融合/CRC host、ARMCC 构建 | FSM/tick host、ARMCC 构建 | queue host、ROS 构建与 18 项 gtest | backoff/UDP/YAML host、ROS/Qt 构建 | host+ARM 用户态+隔离内核 `.ko` 联编 |
+| 未验证 | 外设/WiFi | 实车参数 | ROS 节点/设备吞吐 | ROS 节点/串口/RTSP 联调 | 目标板加载/采样 |
 
 ## 面试时的真实性规则
 

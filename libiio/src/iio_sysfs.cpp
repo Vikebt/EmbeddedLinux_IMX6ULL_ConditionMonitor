@@ -27,7 +27,12 @@ bool tryReadText(const std::string& path, std::string* value) {
 
 void writeText(const std::string& path, const std::string& value) {
   std::ofstream output(path.c_str());
-  if (!output || !(output << value)) {
+  if (!output) {
+    throw std::runtime_error("cannot open " + path);
+  }
+  output << value;
+  output.close();
+  if (!output) {
     throw std::runtime_error("cannot write " + path);
   }
 }

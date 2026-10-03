@@ -4,11 +4,14 @@
 from __future__ import annotations
 
 import html
+import hashlib
 import re
 from pathlib import Path
+from typing import Optional
+from urllib.parse import quote
 
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT
+from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
@@ -50,6 +53,17 @@ SOURCE_FILES = [
 ]
 
 
+def source_digest() -> str:
+    digest = hashlib.sha256()
+    for filename in SOURCE_FILES:
+        digest.update(filename.encode("utf-8"))
+        digest.update((SOURCE_DIR / filename).read_bytes())
+    return digest.hexdigest()
+
+
+SOURCE_DIGEST = source_digest()
+
+
 def register_fonts() -> None:
     if not FONT_PATH.exists():
         raise FileNotFoundError(f"Chinese font not found: {FONT_PATH}")
@@ -58,7 +72,21 @@ def register_fonts() -> None:
     pdfmetrics.registerFont(TTFont("CN-Mono", str(FONT_PATH)))
 
 
-def inline(text: str) -> str:
+def pdf_link_target(target: str, source: Optional[Path]) -> str:
+    if source is None or re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", target):
+        return target
+    relative, separator, fragment = target.partition("#")
+    destination = (source.parent / relative).resolve() if relative else source.resolve()
+    try:
+        repo_path = destination.relative_to(ROOT)
+    except ValueError:
+        return target
+    url = "https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/blob/main/"
+    url += quote(repo_path.as_posix())
+    return url + ("#" + fragment if separator else "")
+
+
+def inline(text: str, source: Optional[Path] = None) -> str:
     """Convert the small Markdown inline subset used by the handbook."""
     placeholders: list[str] = []
 
@@ -69,7 +97,7 @@ def inline(text: str) -> str:
     text = re.sub(
         r"\[([^\]]+)\]\(([^)]+)\)",
         lambda m: stash(
-            f'<link href="{html.escape(m.group(2), quote=True)}" '
+            f'<link href="{html.escape(pdf_link_target(m.group(2), source), quote=True)}" '
             f'color="#165D8C">{html.escape(m.group(1))}</link>'
         ),
         text,
@@ -120,7 +148,7 @@ def build_styles():
             fontSize=11.0,
             leading=17.8,
             textColor=colors.HexColor("#24313A"),
-            alignment=TA_JUSTIFY,
+            alignment=TA_LEFT,
             spaceAfter=3.2,
             allowWidows=0,
             allowOrphans=0,
@@ -236,6 +264,7 @@ def build_styles():
 
 def page_number(canvas, doc):
     canvas.saveState()
+    canvas.setKeywords("source-sha256:" + SOURCE_DIGEST)
     page = canvas.getPageNumber()
     canvas.setStrokeColor(colors.HexColor("#D7DEE2"))
     canvas.line(21 * mm, 16.5 * mm, 189 * mm, 16.5 * mm)
@@ -334,12 +363,12 @@ def cover_story(styles):
     return story
 
 
-def table_flowable(rows, styles, available_width):
+def table_flowable(rows, styles, available_width, source):
     if not rows:
         return None
     width_count = max(len(row) for row in rows)
     normalized = [row + [""] * (width_count - len(row)) for row in rows]
-    data = [[Paragraph(inline(cell.strip()), styles["table"]) for cell in row] for row in normalized]
+    data = [[Paragraph(inline(cell.strip(), source), styles["table"]) for cell in row] for row in normalized]
     if width_count == 2:
         widths = [available_width * 0.25, available_width * 0.75]
     elif width_count == 3:
@@ -380,13 +409,13 @@ def parse_markdown(path: Path, styles, available_width):
     def flush_paragraph():
         nonlocal paragraph
         if paragraph:
-            result.append(Paragraph(inline(" ".join(x.strip() for x in paragraph)), styles["body"]))
+            result.append(Paragraph(inline(" ".join(x.strip() for x in paragraph), path), styles["body"]))
             paragraph = []
 
     def flush_quote():
         nonlocal quote
         if quote:
-            result.append(Paragraph(inline(" ".join(x.strip() for x in quote)), styles["quote"]))
+            result.append(Paragraph(inline(" ".join(x.strip() for x in quote), path), styles["quote"]))
             quote = []
 
     def flush_code():
@@ -405,8 +434,16 @@ def parse_markdown(path: Path, styles, available_width):
                     continue
                 cleaned.append(row)
             if cleaned:
-                result.append(table_flowable(cleaned, styles, available_width))
-                result.append(Spacer(1, 5))
+                if len(cleaned) > 25:
+                    header, body = cleaned[0], cleaned[1:]
+                    for start in range(0, len(body), 12):
+                        result.append(table_flowable(
+                            [header] + body[start:start + 12],
+                            styles, available_width, path))
+                        result.append(Spacer(1, 4))
+                else:
+                    result.append(table_flowable(cleaned, styles, available_width, path))
+                    result.append(Spacer(1, 5))
             table_rows = []
 
     for raw in lines:
@@ -431,7 +468,7 @@ def parse_markdown(path: Path, styles, available_width):
         if heading:
             flush_paragraph(); flush_quote()
             level = len(heading.group(1))
-            p = Paragraph(inline(heading.group(2)), styles[f"h{level}"])
+            p = Paragraph(inline(heading.group(2), path), styles[f"h{level}"])
             # Keep the printed TOC at chapter/section depth. Including every
             # topic card (H3) creates hundreds of entries whose own reflow
             # shifts later page numbers across too many multiBuild passes.
@@ -449,14 +486,14 @@ def parse_markdown(path: Path, styles, available_width):
         check = re.match(r"^\s*-\s+\[([ xX])\]\s+(.+)$", line)
         if check:
             flush_paragraph()
-            mark = "☑" if check.group(1).lower() == "x" else "☐"
-            result.append(Paragraph(f"{mark}&nbsp;&nbsp;{inline(check.group(2))}", styles["list"]))
+            mark = "[x]" if check.group(1).lower() == "x" else "[ ]"
+            result.append(Paragraph(f"{mark}&nbsp;&nbsp;{inline(check.group(2), path)}", styles["list"]))
         elif bullet:
             flush_paragraph()
-            result.append(Paragraph(f"•&nbsp;&nbsp;{inline(bullet.group(1))}", styles["list"]))
+            result.append(Paragraph(f"-&nbsp;&nbsp;{inline(bullet.group(1), path)}", styles["list"]))
         elif ordered:
             flush_paragraph()
-            result.append(Paragraph(f"{ordered.group(1)}.&nbsp;&nbsp;{inline(ordered.group(2))}", styles["list"]))
+            result.append(Paragraph(f"{ordered.group(1)}.&nbsp;&nbsp;{inline(ordered.group(2), path)}", styles["list"]))
         elif not line.strip():
             flush_paragraph()
         elif re.fullmatch(r"-{3,}", line.strip()):
