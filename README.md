@@ -21,7 +21,7 @@
 
 - [模块化五项目面试讲义](docs/interview-handbook/README.md)：216 题分级映射、九段式详解、项目故事、追问树、实验、速记卡和术语表。
 - [PDF 版讲义](output/Five-Project-Embedded-Interview-Handbook.pdf)：适合连续阅读、打印和离线复习。
-- [五项目验证矩阵](docs/FIVE_PROJECT_VALIDATION_MATRIX.md)：区分 `CODE/HOST/CROSS/HIL/TODO-HIL`。
+- [五项目验证矩阵](docs/FIVE_PROJECT_VALIDATION_MATRIX.md)：区分 `CODE/HOST/ROS-BUILD/CROSS/HIL/TODO-HIL`，编译与实机运行不混同。
 - [旧版单文件手册](docs/FIVE_PROJECT_INTERVIEW_HANDBOOK.md)：保留旧链接，作为快速摘要和兼容入口。
 
 讲义的固定版本保存在 [`study-step-7-detailed-handbook`](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/tree/study-step-7-detailed-handbook/docs/interview-handbook)，日常更新以 `main` 为准。

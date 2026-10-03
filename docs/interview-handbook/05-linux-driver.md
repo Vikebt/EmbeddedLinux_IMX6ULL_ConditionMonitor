@@ -23,7 +23,7 @@
 
 内核构建通常包含选择架构与交叉工具链、配置、编译 Image/zImage、DTB 和模块，再与 bootloader/rootfs 配套部署。启动链可概括为 bootloader 准备 CPU/内存和启动参数，内核解压、初始化体系结构/内存/调度/驱动，挂载根文件系统并启动 PID 1。
 
-P5 只验证驱动对象与 vendor 4.1.15 API/ARM 编译器兼容；当前 vendor `.config` 未启用 IIO buffer/trigger，因此不能声称完成了完整可加载 `.ko`。
+P5 已在隔离的 vendor 4.1.15 内核副本中接入驱动 Kconfig、补齐 IIO buffer/trigger 依赖，并完成 `zImage modules` 与外部 ARM `.ko` 联编且无未解析符号警告。原始 vendor `.config` 仍不能直接满足该模块依赖；更重要的是，尚未在目标板核对 `vermagic`、加载、采样和卸载，不能把“可编译 `.ko`”说成“已上板可用”。
 
 ### A01｜原题 193、194：上下文、内核态与用户态
 
@@ -86,7 +86,7 @@ MMU 提供虚拟到物理映射、权限和隔离。驱动中的设备地址、D
 - **代码证据**：P5 `kernel/icm20608_iio.c`。证据：`CODE`、`CROSS`，加载卸载为 `TODO-HIL`。
 - **工程取舍**：devm 减少 probe 失败分支，但对外可见对象的注销顺序仍要明确。
 - **常见误区**：认为 devm 意味 remove 什么都不用做；把对象编译成功写成 insmod 成功。
-- **30 秒回答**：项目用 module_spi_driver 注册，设备匹配后 probe，卸载时 remove。当前只做 vendor 4.1.15 对象编译，没有声称完成 insmod/rmmod。
+- **30 秒回答**：项目用 module_spi_driver 注册，设备匹配后 probe，卸载时 remove。隔离 vendor 4.1.15 内核联编已产出 ARM `.ko`，但没有声称完成目标板 insmod/rmmod。
 - **2 分钟展开**：说明注册驱动与创建设备的区别、引用计数和卸载竞态。
 
 ### B05｜原题 208～211：字符/块/网络设备和 cdev

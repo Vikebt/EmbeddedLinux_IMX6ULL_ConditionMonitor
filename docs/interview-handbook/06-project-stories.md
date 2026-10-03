@@ -266,11 +266,11 @@ libcondition: tilt / impact / sensor_fault
 | L4 trigger/buffer | [driver](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/blob/main/kernel/icm20608_iio.c) | [study-step-4](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/blob/study-step-4-threaded-buffer/kernel/icm20608_iio.c) |
 | L5 epoll | [conditiond](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/blob/main/apps/conditiond.cpp) | [study-step-5](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/blob/study-step-5-epoll-service/apps/conditiond.cpp) |
 
-证据等级：`CODE`、`HOST`、`CROSS`；可加载 `.ko` 和实板采样为 `TODO-HIL`。
+证据等级：`CODE`、`HOST`、`CROSS`；隔离 vendor 内核 ARM `.ko` 联编已通过，目标板加载与实板采样为 `TODO-HIL`。
 
 ### 30 秒介绍
 
-> 这是我基于 I.MX6ULL 学习经历独立构建的 Linux 驱动作品。ICM20608 通过 SPI/regmap 接入 IIO，hrtimer 只发 trigger，可能睡眠的 bulk read 在线程化 handler；用户态按 sysfs name 找设备，用 epoll 统一 IIO、timerfd、signalfd，纯状态机判断倾斜、冲击和失联。Linux 4/4 测试、ARM 用户态和 vendor 4.1.15 驱动对象交叉编译通过，`.ko` 与实板仍明确待验证。
+> 这是我基于 I.MX6ULL 学习经历独立构建的 Linux 驱动作品。ICM20608 通过 SPI/regmap 接入 IIO，hrtimer 只发 trigger，可能睡眠的 bulk read 在线程化 handler；用户态按 sysfs name 找设备，用 epoll 统一 IIO、timerfd、signalfd，纯状态机判断倾斜、冲击和失联。Linux 宿主 5/5 测试、ARM 用户态交叉编译与隔离 vendor 4.1.15 内核 `.ko` 联编已通过；目标板加载和实板采样仍明确待验证。
 
 ### 2 分钟展开
 
@@ -292,8 +292,8 @@ libcondition: tilt / impact / sensor_fault
 | 并发边界 | FreeRTOS queue/mutex | ISR→queue→单控制任务 | thread+bounded queue | atomic/mutex snapshot | 单线程 epoll + threaded handler |
 | 过载策略 | 丢旧保新 | overwrite 最新值 | DropOldest/Block | 3 帧点云队列 | drain + pending |
 | 生命周期 | RTOS 创建断言/hooks | 传感器超时/FSM | shutdown+join | stop+join | RAII/devm |
-| 主要验证 | 融合/CRC host | FSM/tick host | queue host | backoff host | host+ARM cross+driver object |
-| 未验证 | 外设/WiFi | 实车参数 | ROS/设备吞吐 | 完整联调 | `.ko`/HIL |
+| 主要验证 | 融合/CRC host、ARMCC 构建 | FSM/tick host、ARMCC 构建 | queue host、ROS 构建与 18 项 gtest | backoff/YAML host、ROS/Qt 构建 | host+ARM 用户态+隔离内核 `.ko` 联编 |
+| 未验证 | 外设/WiFi | 实车参数 | ROS 节点/设备吞吐 | ROS 节点/串口/RTSP 联调 | 目标板加载/采样 |
 
 ## 面试时的真实性规则
 
