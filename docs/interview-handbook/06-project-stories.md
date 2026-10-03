@@ -153,7 +153,7 @@ metrics 快照与受控 shutdown
 | 有界队列 | [bounded_queue.h](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/blob/main/src/lslidar_ls_driver/include/lslidar_ls_driver/core/bounded_queue.h) | [study-step-2](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/blob/study-step-2-overload-policy/src/lslidar_ls_driver/include/lslidar_ls_driver/core/bounded_queue.h) |
 | 测试 | [test_bounded_queue.cpp](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/blob/main/src/lslidar_ls_driver/tests/host/test_bounded_queue.cpp) | 同路径 |
 
-证据等级：`CODE`、`HOST`；ROS/PCL 全量构建和 LS1550/Jetson 性能为 `TODO-HIL`。
+证据等级：`CODE`、`HOST`、`ROS-BUILD`；[ROS Noetic 完整 catkin 构建](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/actions/runs/37108005644)已通过，ROS 节点运行和 LS1550/Jetson 性能仍为 `TODO-HIL`。
 
 ### 30 秒介绍
 
@@ -208,11 +208,11 @@ RTSP ----------┘          │
 | RTSP 退避 | [rtsp_capture.cpp](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/blob/main/src/mainwindow/src/rtsp_capture.cpp) | [study-step-2](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/blob/study-step-2-consistent-snapshots/src/mainwindow/src/rtsp_capture.cpp) |
 | 测试 | [host test](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/tree/main/src/mainwindow/tests/host) | 同路径 |
 
-证据等级：`CODE`、`HOST`；ROS/Qt/OpenCV/PCL/串口/RTSP 联调为 `TODO-HIL`。
+证据等级：`CODE`、`HOST`、`ROS-BUILD`；[ROS Noetic/Qt 四包完整 catkin 构建](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37108314382)已通过，ROS 节点运行与串口/RTSP 联调仍为 `TODO-HIL`。
 
 ### 30 秒介绍
 
-> 这是 ROS、Qt、RTSP、串口与点云融合应用。重构重点是线程生命周期和快照一致性：移除 detached 与混合回调调度，单值标志用 atomic，复合传感器结果用 mutex 整体复制；RTSP 使用封顶退避，点云落盘队列有容量。宿主测试覆盖退避，完整依赖环境和真实时间同步仍需目标系统验证。
+> 这是 ROS、Qt、RTSP、串口与点云融合应用。重构重点是线程生命周期和快照一致性：移除 detached 与混合回调调度，单值标志用 atomic，复合传感器结果用 mutex 整体复制；RTSP 使用封顶退避，点云落盘队列有容量。宿主测试覆盖退避和配置回滚，完整 ROS/Qt 工程编译通过；节点运行、设备联调和真实时间同步仍需目标系统验证。
 
 ### 2 分钟展开
 
