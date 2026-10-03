@@ -60,6 +60,17 @@ int main() {
     expect(get(scan / "in_timestamp_en") == "1", "timestamp enabled");
     iio_adapter::disableBuffer(device);
     expect(get(buffer / "enable") == "0", "buffer can be disabled");
+
+    fs::remove(device_path / "sampling_frequency");
+    fs::create_symlink("/dev/full", device_path / "sampling_frequency");
+    bool rejected_write_error = false;
+    try {
+      iio_adapter::configureBuffer(device, {100, 64});
+    } catch (const std::exception&) {
+      rejected_write_error = true;
+    }
+    expect(rejected_write_error, "a failed sysfs write is reported");
+    expect(get(buffer / "enable") == "0", "buffer remains disabled after write failure");
   } catch (const std::exception& error) {
     std::cerr << "unexpected exception: " << error.what() << '\n';
     ++failures;

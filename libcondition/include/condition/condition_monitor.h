@@ -37,7 +37,7 @@ class Monitor {
  public:
   explicit Monitor(Config config = {});
   Assessment update(const Sample& sample);
-  Assessment checkTimeout(std::int64_t now_ns) const;
+  Assessment checkTimeout(std::int64_t now_ns);
 
  private:
   Config config_;

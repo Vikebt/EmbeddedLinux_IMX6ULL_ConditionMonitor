@@ -5,7 +5,10 @@ from __future__ import annotations
 
 import random
 import re
+import hashlib
 from pathlib import Path
+
+from pypdf import PdfReader
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -103,6 +106,22 @@ if "study-step-" not in story:
 
 if not PDF.is_file() or PDF.stat().st_size < 100_000:
     fail("final PDF is missing or unexpectedly small")
+
+digest = hashlib.sha256()
+for source in sources:
+    digest.update(source.name.encode("utf-8"))
+    digest.update(source.read_bytes())
+reader = PdfReader(PDF)
+if len(reader.pages) < 20:
+    fail(f"PDF has too few pages: {len(reader.pages)}")
+if reader.metadata.keywords != "source-sha256:" + digest.hexdigest():
+    fail("PDF is stale: rebuild it from the current Markdown sources")
+for page_number, page in enumerate(reader.pages, start=1):
+    for annotation in page.get("/Annots", []):
+        action = annotation.get_object().get("/A")
+        uri = action.get("/URI") if action else None
+        if uri and not str(uri).startswith(("https://", "http://", "mailto:")):
+            fail(f"PDF page {page_number} has a non-portable link: {uri}")
 
 rng = random.Random(20261002)
 sample = sorted(rng.sample(rows, 20), key=lambda row: row[0])

@@ -1,0 +1,11 @@
+diff --git a/drivers/iio/Kconfig b/drivers/iio/Kconfig
+--- a/drivers/iio/Kconfig
++++ b/drivers/iio/Kconfig
+@@ -66,6 +66,7 @@ source "drivers/iio/dac/Kconfig"
+ source "drivers/iio/frequency/Kconfig"
+ source "drivers/iio/gyro/Kconfig"
+ source "drivers/iio/humidity/Kconfig"
++source "drivers/iio/imu/condition_monitor/Kconfig"
+ source "drivers/iio/imu/Kconfig"
+ source "drivers/iio/light/Kconfig"
+ source "drivers/iio/magnetometer/Kconfig"

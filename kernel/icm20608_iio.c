@@ -109,8 +109,9 @@ static int icm20608_read_raw(struct iio_dev *indio_dev,
 			*val2 = 133231;
 			return IIO_VAL_INT_PLUS_NANO;
 		case IIO_TEMP:
-			*val = 0;
-			*val2 = 3059;
+			/* IIO temperature ABI uses milli-degrees Celsius. */
+			*val = 3;
+			*val2 = 59976;
 			return IIO_VAL_INT_PLUS_MICRO;
 		default:
 			return -EINVAL;

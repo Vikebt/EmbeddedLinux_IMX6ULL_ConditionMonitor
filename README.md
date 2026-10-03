@@ -57,7 +57,7 @@ file build-arm/apps/conditiond
 
 ## 板端部署顺序
 
-1. 在 vendor 4.1.15 内核合入 `kernel/Kconfig`/`Makefile`，应用 defconfig fragment 与设备树节点，重编内核、DTB 和模块。
+1. 按 [vendor 内核集成指南](deploy/KERNEL_INTEGRATION.md) 在干净副本中接入 `kernel/Kconfig`、应用 defconfig fragment 与设备树节点，重编内核、DTB 和模块；外部模块使用本仓库的 `kernel/Makefile` 构建。
 2. 启动后确认 `/sys/bus/iio/devices/iio:device*/name` 为 `icm20608`。
 3. 交叉编译并安装 `conditiond`，先运行 `conditiond --simulate --samples 200`，再运行真实设备模式。
 4. 完成冷启动、倾斜、两次连续冲击、拔除传感器/停流和长稳测试后，才把 HIL 项标记为通过。
