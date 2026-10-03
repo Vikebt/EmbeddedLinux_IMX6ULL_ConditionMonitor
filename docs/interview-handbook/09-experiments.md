@@ -41,7 +41,7 @@ Keil 构建实验：用 ARMCC 5.06u6 构建 `Project/MDK-ARM/sud.uvprojx`，检�
 
 失败注入：临时把差值判断替换成绝对时间比较，回绕样例应失败。这个失败不是编译错误，而是边界条件下的业务错误。
 
-Keil 构建实验：ARMCC 5.06u6 构建 `Project/MDK-ARM/Fire_FreeRTOS.uvprojx`，当前日志为 0 错误、0 警告并生成 AXF/HEX；这验证定时器模块进入固件和完整链接，不验证 OLED 启动时序或电机动作。
+Keil 构建实验：ARMCC 5.06u6 构建 `Project/MDK-ARM/Fire_FreeRTOS.uvprojx`，当前日志为 0 错误、0 警告并生成 AXF/HEX。检查 `Listing/Fire_FreeRTOS.map`：Flash 使用 `0x4EF8`、上限 `0x10000`；RAM 使用 `0x2808`、上限 `0x5000`。这些约束修正了旧工程里 512 KB / 64 KB 的大芯片遗留设置，防止未来超出 STM32F103C8 容量仍能链接；它们不验证 OLED 启动时序或电机动作。
 
 面试表达：
 

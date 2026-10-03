@@ -5,7 +5,7 @@
 | 项目 | 已验证 | 复现入口 | 尚未验证 | 可安全表述 |
 | --- | --- | --- | --- | --- |
 | 手持体温检测仪 | 宿主 2/2、ARMCC 5.06u6 完整构建 0 错误 0 警告、map 显示 `LR_IROM1` 上限 `0xFC00` | `tests/host`、`Project/MDK-ARM/Obj/Listings/sud.map` | 温度/RFID/Flash/WiFi 实物链路与掉电恢复 | “主机测试与 Keil 构建通过，板端链路未验证” |
-| 智能送药小车 | 宿主 1/1、ARMCC 5.06u6 完整构建 0 错误 0 警告 | `tests/host`、`Build/Fire_FreeRTOS.axf` | 电机、OpenMV、HX711 实车标定与长稳 | “状态机测试与 Keil 构建通过，参数待实车标定” |
+| 智能送药小车 | 宿主 1/1、ARMCC 5.06u6 完整构建 0 错误 0 警告；map 的 Flash/RAM 上限分别为 `0x10000` / `0x5000` | `tests/host`、`Listing/Fire_FreeRTOS.map` | 电机、OpenMV、HX711 实车标定与长稳 | “状态机测试与 Keil 构建通过，参数待实车标定” |
 | 三维 LiDAR 感知 | 有界队列 DropOldest/Block、shutdown/唤醒 | `src/lslidar_ls_driver/tests/host` | ROS/PCL 全量构建、LS1550/Jetson 吞吐与丢包 | “并发队列语义已测试，设备性能未验证” |
 | 多源光电数据融合 | RTSP 退避序列、源码一致性检查 | `src/mainwindow/tests/host` | ROS/Qt/OpenCV/PCL/串口/RTSP 联调 | “生命周期与退避策略已验证，集成待目标环境” |
 | I.MX6ULL 状态监测器 | Linux Debug/Release 各 5/5 Host、Windows 2/2 Host、ARM 用户态交叉编译、隔离 vendor 4.1.15 内核联编与 ARM `.ko` 无未解析符号 | `tests`、`scripts/validate_driver_source.sh`、`deploy/KERNEL_INTEGRATION.md` | 目标板加载、真实 IIO 采样与 HIL | “Host、ARM 交叉编译及隔离内核联编通过；板端未验证” |
