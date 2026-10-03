@@ -208,11 +208,11 @@ RTSP ----------┘          │
 | RTSP 退避 | [rtsp_capture.cpp](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/blob/main/src/mainwindow/src/rtsp_capture.cpp) | [study-step-2](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/blob/study-step-2-consistent-snapshots/src/mainwindow/src/rtsp_capture.cpp) |
 | 测试 | [host test](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/tree/main/src/mainwindow/tests/host) | 同路径 |
 
-证据等级：`CODE`、`HOST`、`ROS-BUILD`；[ROS Noetic/Qt 四包完整 catkin 构建](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37108314382)已通过，ROS 节点运行与串口/RTSP 联调仍为 `TODO-HIL`。
+证据等级：`CODE`、`HOST`、`ROS-BUILD`；[Linux Debug/Release 宿主测试](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37121300009)各 3/3（退避、UDP 截断、YAML 回滚），[ROS Noetic/Qt 四包完整 catkin 构建](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37121299927)通过；ROS 节点运行与真实导航源/串口/RTSP 联调仍为 `TODO-HIL`。
 
 ### 30 秒介绍
 
-> 这是 ROS、Qt、RTSP、串口与点云融合应用。重构重点是线程生命周期和快照一致性：移除 detached 与混合回调调度，单值标志用 atomic，复合传感器结果用 mutex 整体复制；RTSP 使用封顶退避，点云落盘队列有容量。宿主测试覆盖退避和配置回滚，完整 ROS/Qt 工程编译通过；节点运行、设备联调和真实时间同步仍需目标系统验证。
+> 这是 ROS、Qt、RTSP、串口与点云融合应用。重构重点是线程生命周期和快照一致性：移除 detached 与混合回调调度，单值标志用 atomic，复合传感器结果用 mutex 整体复制；RTSP 使用封顶退避，点云落盘队列有容量。宿主测试覆盖退避、UDP 报文边界和配置回滚，完整 ROS/Qt 工程编译通过；节点运行、设备联调和真实时间同步仍需目标系统验证。
 
 ### 2 分钟展开
 
@@ -292,7 +292,7 @@ libcondition: tilt / impact / sensor_fault
 | 并发边界 | FreeRTOS queue/mutex | ISR→queue→单控制任务 | thread+bounded queue | atomic/mutex snapshot | 单线程 epoll + threaded handler |
 | 过载策略 | 丢旧保新 | overwrite 最新值 | DropOldest/Block | 3 帧点云队列 | drain + pending |
 | 生命周期 | RTOS 创建断言/hooks | 传感器超时/FSM | shutdown+join | stop+join | RAII/devm |
-| 主要验证 | 融合/CRC host、ARMCC 构建 | FSM/tick host、ARMCC 构建 | queue host、ROS 构建与 18 项 gtest | backoff/YAML host、ROS/Qt 构建 | host+ARM 用户态+隔离内核 `.ko` 联编 |
+| 主要验证 | 融合/CRC host、ARMCC 构建 | FSM/tick host、ARMCC 构建 | queue host、ROS 构建与 18 项 gtest | backoff/UDP/YAML host、ROS/Qt 构建 | host+ARM 用户态+隔离内核 `.ko` 联编 |
 | 未验证 | 外设/WiFi | 实车参数 | ROS 节点/设备吞吐 | ROS 节点/串口/RTSP 联调 | 目标板加载/采样 |
 
 ## 面试时的真实性规则

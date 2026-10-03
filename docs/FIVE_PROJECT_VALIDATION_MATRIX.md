@@ -7,14 +7,14 @@
 | 手持体温检测仪 | 宿主 2/2、ARMCC 5.06u6 完整构建 0 错误 0 警告、map 显示 `LR_IROM1` 上限 `0xFC00` | `tests/host`、`Project/MDK-ARM/Obj/Listings/sud.map` | 温度/RFID/Flash/WiFi 实物链路与掉电恢复 | “主机测试与 Keil 构建通过，板端链路未验证” |
 | 智能送药小车 | 宿主 1/1、ARMCC 5.06u6 完整构建 0 错误 0 警告；map 的 Flash/RAM 上限分别为 `0x10000` / `0x5000` | `tests/host`、`Listing/Fire_FreeRTOS.map` | 电机、OpenMV、HX711 实车标定与长稳 | “状态机测试与 Keil 构建通过，参数待实车标定” |
 | 三维 LiDAR 感知 | 有界队列 DropOldest/Block、shutdown/唤醒；GitHub Linux Debug/Release 宿主 CI 各 1/1；ROS Noetic/Focal 完整 catkin 构建与 18 项 gtest 通过 | `src/lslidar_ls_driver/tests/host`、GitHub Actions `Host regressions` 与 `ROS Noetic integration` | ROS 节点运行、LS1550/Jetson 吞吐与丢包 | “并发队列和 ROS 算法测试通过，工程可构建；设备性能未验证” |
-| 多源光电数据融合 | GitHub Linux Debug/Release 各 2/2（重连、YAML 事务回滚）；Windows MSVC Release 2/2；ROS Noetic/Focal 四包完整 catkin 构建通过 | `src/mainwindow/tests/host`、GitHub Actions `Host regressions` 与 `ROS Noetic integration` | ROS 节点运行、串口/RTSP 联调与退出时限 | “重连和配置事务测试通过，ROS 工程可构建；设备联调未验证” |
+| 多源光电数据融合 | GitHub Linux Debug/Release 各 3/3（重连、导航 UDP 截断、YAML 事务回滚）；Windows MSVC Release 2/2；ROS Noetic/Focal 四包完整 catkin 构建通过 | `src/mainwindow/tests/host`、GitHub Actions `Host regressions` 与 `ROS Noetic integration` | ROS 节点运行、真实导航源/串口/RTSP 联调与退出时限 | “重连、配置事务及 UDP 报文边界测试通过，ROS 工程可构建；设备联调未验证” |
 | I.MX6ULL 状态监测器 | Linux Debug/Release 各 5/5 Host、Windows 2/2 Host、ARM 用户态交叉编译、隔离 vendor 4.1.15 内核联编与 ARM `.ko` 无未解析符号 | `tests`、`scripts/validate_driver_source.sh`、`deploy/KERNEL_INTEGRATION.md` | 目标板加载、真实 IIO 采样与 HIL | “Host、ARM 交叉编译及隔离内核联编通过；板端未验证” |
 
 2026-10-03 的 GitHub 宿主 CI 记录：[P1](https://github.com/Vikebt/Handheld_Temperature_STM32F103C8T6/actions/runs/37106291838)、[P2](https://github.com/Vikebt/Smart_Medicine_Cart_STM32F103C8T6/actions/runs/37106328712)、[P3](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/actions/runs/37106343765)、[P4](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37106357832)、[P5](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/actions/runs/37106372372)。五项作业均完成且结果为 success；它们只覆盖各自工作流列明的宿主测试，不覆盖 Keil 固件构建、ROS 全量构建或 HIL。
 
 P3 的 [ROS Noetic 测试记录](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/actions/runs/37119796557) 同时包含完整构建与四组 gtest，汇总为 18 测试、0 失败；仍不包含 ROS 节点与雷达实机运行。
 
-P4 另有 [ROS Noetic/Qt 四包 catkin 构建记录](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37108314382)，结果为 success；同样只证明构建，不证明串口、RTSP 或 ROS 节点的运行行为。
+P4 的 [Linux 宿主测试记录](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37121300009) 在 Debug/Release 各 3/3，通过回环 UDP 验证截断边界；[ROS Noetic/Qt 四包构建记录](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37121299927) 为 success。这些结果仍不证明串口、RTSP 或 ROS 节点的实机运行行为。
 
 Windows 上使用的 MinGW 7.3 无法可靠处理构建规则中的中文绝对路径。五个仓库的 Windows 测试均通过临时 ASCII 盘符映射复跑；直接调用编译器的最小实验也证明失败发生在 MinGW Makefiles 的路径解析层，而不是测试源码。Linux/WSL 构建不需要该映射。
 
