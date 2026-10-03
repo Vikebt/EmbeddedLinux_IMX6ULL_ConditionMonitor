@@ -26,7 +26,7 @@
 | --- | --- | --- | --- | --- |
 | 手持体温检测仪 | 多源测温、身份确认、结果存储与上传 | FreeRTOS 任务、队列、mutex、临界区、CRC、Flash 一致性 | `prvSendLatest`、`FusionPolicy_IsMeasurementReady`、`FlashStore_Load/Save` | 宿主 2/2、ARMCC 完整构建通过；外设时序与掉电恢复未做 HIL |
 | 智能送药小车 | 视觉帧、称重与电机控制的确定性协作 | ISR/任务边界、单写者、非阻塞 FSM、超时、Tick 回绕 | USART ISR、`vControlTask`、`CartState_Step`、HX711 超时 | 宿主 1/1、ARMCC 完整构建通过；PID/转向时长和标定未实车验证 |
-| 三维 LiDAR 感知 | UDP/PCAP 数据进入并行点云流水线 | socket、epoll、RAII、有界队列、条件变量、反压、优雅退出 | `InputSocket`、`BoundedQueue`、`PipelineController::stop` | 宿主测试与 ROS Noetic 完整编译通过；节点运行和设备吞吐未验证 |
+| 三维 LiDAR 感知 | UDP/PCAP 数据进入并行点云流水线 | socket、epoll、RAII、有界队列、条件变量、反压、优雅退出 | `InputSocket`、`BoundedQueue`、`PipelineController::stop` | 宿主测试、ROS Noetic 完整编译及 18 项 gtest 通过；节点运行和设备吞吐未验证 |
 | 多源光电数据融合 | ROS、Qt、串口、RTSP 和点云并发运行 | 进程/线程、join、atomic/mutex、快照、重连退避、资源生命周期 | `QNode`、各传感器 `latest()`、`RTSPCapture::stop_thread` | 重连/YAML 回滚测试与 ROS/Qt 四包完整编译通过；串口/RTSP 运行联调未验证 |
 | I.MX6ULL 状态监测器 | SPI IMU 的标准驱动、缓冲采样和告警服务 | 设备树、SPI、regmap、IIO、sysfs、hrtimer、线程化处理、epoll/signalfd/timerfd、RAII | `icm20608_probe`、trigger handler、`conditiond`、`Monitor::update` | Host、ARM 用户态及隔离 vendor 内核 `.ko` 联编通过；目标板加载和采样未验证 |
 
