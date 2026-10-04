@@ -14,5 +14,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_link_libraries(test-iio-sysfs PRIVATE iio_adapter)
   add_test(NAME iio-sysfs COMMAND test-iio-sysfs)
   add_test(NAME conditiond-simulated COMMAND conditiond --simulate --samples 30)
+  if(NOT CMAKE_CROSSCOMPILING)
+    find_package(PythonInterp 3 REQUIRED)
+    add_test(NAME conditiond-process
+      COMMAND ${PYTHON_EXECUTABLE}
+              ${CMAKE_CURRENT_SOURCE_DIR}/test_conditiond_process.py
+              $<TARGET_FILE:conditiond>)
+  endif()
 endif()
 

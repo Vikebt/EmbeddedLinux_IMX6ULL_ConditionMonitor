@@ -270,7 +270,7 @@ libcondition: tilt / impact / sensor_fault
 
 ### 30 秒介绍
 
-> 这是我基于 I.MX6ULL 学习经历独立构建的 Linux 驱动作品。ICM20608 通过 SPI/regmap 接入 IIO，hrtimer 只发 trigger，可能睡眠的 bulk read 在线程化 handler；用户态按 sysfs name 找设备，用 epoll 统一 IIO、timerfd、signalfd，纯状态机判断倾斜、冲击和失联。Linux 宿主 5/5 测试、ARM 用户态交叉编译与隔离 vendor 4.1.15 内核 `.ko` 联编已通过；目标板加载和实板采样仍明确待验证。
+> 这是我基于 I.MX6ULL 学习经历独立构建的 Linux 驱动作品。ICM20608 通过 SPI/regmap 接入 IIO，hrtimer 只发 trigger，可能睡眠的 bulk read 在线程化 handler；用户态按 sysfs name 找设备，用 epoll 统一 IIO、timerfd、signalfd，纯状态机判断倾斜、冲击和失联。Linux 宿主 Debug/Release 各 6/6 测试（含模拟服务的 SIGTERM/SIGINT 进程级退出）、ARM 用户态交叉编译与隔离 vendor 4.1.15 内核 `.ko` 联编已通过；目标板加载和实板采样仍明确待验证。
 
 ### 2 分钟展开
 

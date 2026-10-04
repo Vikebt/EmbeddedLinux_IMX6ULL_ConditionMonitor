@@ -16,7 +16,8 @@
 | 状态机单元测试 | Host | PASS | 正常、毛刺确认、冲击、倾斜、超时、NaN、时间倒退 |
 | CSV 回放 | Host | PASS | 5 条接受、0 条拒绝，状态 normal → impact → normal |
 | Windows CMake/CTest | Host | PASS | ASCII 盘符映射下 2/2 tests passed（领域层与回放） |
-| Linux CMake/CTest | Host | PASS | WSL GCC 9.4，Debug 和 Release 各 5/5 tests passed，含扫描帧拆包、伪 sysfs 与 epoll 模拟服务 |
+| Linux CMake/CTest | Host | PASS | WSL GCC 9.4，Debug 和 Release 各 6/6 tests passed，含扫描帧拆包、伪 sysfs、epoll 模拟服务与进程级退出测试 |
+| `conditiond` 进程级测试 | Host | PASS | 模拟 30 次采样的 JSON 状态为 normal → impact → normal；SIGTERM/SIGINT 后返回 0；非法参数返回 2。这不覆盖真实 IIO 设备或目标板退出耗时 |
 | IIO 扫描帧拆包 | Host | PASS | 单字节与半帧输入、多帧合并、最多保留 23 字节残帧；单次事件最多读取 16 次，避免持续输入独占事件循环 |
 | 传感器失联确认窗口 | Host | PASS | 超时清空冲击/倾斜累计，恢复后必须重新累计确认样本 |
 | sysfs 写入失败 | Host | PASS | 伪 sysfs 指向 `/dev/full`，确认写入错误传播且 buffer 保持关闭 |
