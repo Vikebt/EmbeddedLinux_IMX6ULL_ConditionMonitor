@@ -74,7 +74,7 @@ Windows 上使用的 MinGW 7.3 无法可靠处理构建规则中的中文绝对�
 ## 第五项目的上板闭环
 
 1. 按 `deploy/KERNEL_INTEGRATION.md` 给 vendor 4.1.15 的干净副本接入驱动 Kconfig，再合并 `deploy/imx6ull_iio_defconfig.fragment`，检查隐藏的 `CONFIG_IIO_TRIGGERED_BUFFER` 后重新构建内核、DTB 和模块。
-2. 合入 `deploy/imx6ull-alientek-icm20608.dtsi`，核对实际片选、引脚和最高频率。
+2. 合入[设备树片段](../deploy/imx6ull-alientek-emmc-icm20608.dtsi)，核对实际片选、引脚和最高频率。
 3. 启动后检查 `dmesg`、IIO `name`、raw/scale/sampling_frequency。
 4. 先运行 `conditiond --simulate`，再运行真实 IIO buffer 模式。
 5. 依次测试静置、单点毛刺、持续倾斜、连续冲击、停流/拔除、SIGTERM 和 8 小时长稳。
