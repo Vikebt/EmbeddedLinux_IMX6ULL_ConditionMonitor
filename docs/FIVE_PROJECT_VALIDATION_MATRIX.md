@@ -6,13 +6,13 @@
 | --- | --- | --- | --- | --- |
 | 手持体温检测仪 | 宿主 2/2、ARMCC 5.06u6 完整构建 0 错误 0 警告、map 显示 `LR_IROM1` 上限 `0xFC00` | `tests/host`、`Project/MDK-ARM/Obj/Listings/sud.map` | 温度/RFID/Flash/WiFi 实物链路与掉电恢复 | “主机测试与 Keil 构建通过，板端链路未验证” |
 | 智能送药小车 | 宿主 1/1、ARMCC 5.06u6 完整构建 0 错误 0 警告；map 的 Flash/RAM 上限分别为 `0x10000` / `0x5000` | `tests/host`、`Listing/Fire_FreeRTOS.map` | 电机、OpenMV、HX711 实车标定与长稳 | “状态机测试与 Keil 构建通过，参数待实车标定” |
-| 三维 LiDAR 感知 | 有界队列 DropOldest/Block、shutdown/唤醒；GitHub Linux Debug/Release 宿主 CI 各 1/1；ROS Noetic/Focal 完整 catkin 构建与 18 项 gtest 通过 | `src/lslidar_ls_driver/tests/host`、GitHub Actions `Host regressions` 与 `ROS Noetic integration` | ROS 节点运行、LS1550/Jetson 吞吐与丢包 | “并发队列和 ROS 算法测试通过，工程可构建；设备性能未验证” |
+| 三维 LiDAR 感知 | 有界队列 DropOldest/Block、shutdown/唤醒；GitHub Linux Debug/Release 宿主 CI 各 1/1；ROS Noetic/Focal 完整 catkin 构建与 20 项自动测试通过（含未初始化驱动析构） | `src/lslidar_ls_driver/tests/host`、GitHub Actions `Host regressions` 与 `ROS Noetic integration` | 活动 DIFOP 线程的取消与 ROS 节点退出时限；LS1550/Jetson 吞吐与丢包 | “队列、算法及未初始化析构测试通过，工程可构建；活动线程退出和设备性能未验证” |
 | 多源光电数据融合 | GitHub Linux Debug/Release 各 3/3（重连、导航 UDP 截断、YAML 事务回滚）；Windows MSVC Release 2/2；ROS Noetic/Focal 四包完整 catkin 构建通过 | `src/mainwindow/tests/host`、GitHub Actions `Host regressions` 与 `ROS Noetic integration` | ROS 节点运行、真实导航源/串口/RTSP 联调与退出时限 | “重连、配置事务及 UDP 报文边界测试通过，ROS 工程可构建；设备联调未验证” |
 | I.MX6ULL 状态监测器 | Linux Debug/Release 各 6/6 Host（含模拟服务进程级退出）、Windows 2/2 Host、ARM 用户态交叉编译、隔离 vendor 4.1.15 内核联编与 ARM `.ko` 无未解析符号 | `tests`、`scripts/validate_driver_source.sh`、`deploy/KERNEL_INTEGRATION.md` | 目标板加载、真实 IIO 采样与 HIL | “Host、ARM 交叉编译及隔离内核联编通过；板端未验证” |
 
 2026-10-03 的 GitHub 宿主 CI 记录：[P1](https://github.com/Vikebt/Handheld_Temperature_STM32F103C8T6/actions/runs/37106291838)、[P2](https://github.com/Vikebt/Smart_Medicine_Cart_STM32F103C8T6/actions/runs/37106328712)、[P3](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/actions/runs/37106343765)、[P4](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37106357832)、[P5](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/actions/runs/37106372372)。五项作业均完成且结果为 success；它们只覆盖各自工作流列明的宿主测试，不覆盖 Keil 固件构建、ROS 全量构建或 HIL。
 
-P3 的 [ROS Noetic 测试记录](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/actions/runs/37119796557) 同时包含完整构建与四组 gtest，汇总为 18 测试、0 失败；仍不包含 ROS 节点与雷达实机运行。
+P3 的[最新 ROS Noetic 测试记录](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/actions/runs/37170978834)包含完整构建与 20 项自动测试、0 失败。新增测试先在[修复前的运行](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/actions/runs/37170494180)中复现未初始化驱动析构的段错误，修复后通过；它不证明活动 DIFOP 线程可取消，也不包含 ROS 节点与雷达实机运行。
 
 P4 的 [Linux 宿主测试记录](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37121300009) 在 Debug/Release 各 3/3，通过回环 UDP 验证截断边界；[ROS Noetic/Qt 四包构建记录](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37121299927) 为 success。这些结果仍不证明串口、RTSP 或 ROS 节点的实机运行行为。
 
@@ -58,7 +58,9 @@ Windows 上使用的 MinGW 7.3 无法可靠处理构建规则中的中文绝对�
 
 1. 先用留存的数据包回放，再接实雷达；分别保存原始包计数、ROS 话题频率、`frame_id`、时间戳与点云样例，核对每帧身份传递。
 2. 制造高负载与短时断流，观察有界队列的容量、丢弃计数、消费者唤醒和退出耗时；将实测吞吐、丢包、CPU/内存与温度和输入速率一起记录。
-3. 用相同场景重复测试，区分雷达/网络丢包与应用队列丢弃。现有 18 项 gtest 只覆盖算法/组件，不证明 Jetson 上的实时性能。
+3. 用相同场景重复测试，区分雷达/网络丢包与应用队列丢弃。现有 CI 汇总的 20 项自动测试只覆盖组件和未初始化析构，不证明 Jetson 上的实时性能。
+
+拿到雷达之前仍需单独做软件侧节点退出测试：用无设备 UDP 或受控 PCAP 启动 ROS 节点，在初始化等待和活动 DIFOP 线程两个阶段分别请求退出，记录进程返回码、耗时、线程是否 join 以及 fd 是否释放。该项目前是 **TODO-SOFTWARE**，不能并入有界队列的 `shutdown()` 测试结论。
 
 ## P4 多源光电数据融合：TODO-HIL
 
