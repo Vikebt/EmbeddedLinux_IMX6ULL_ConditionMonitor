@@ -15,7 +15,7 @@
 | L4 | IIO 缓冲采样 | hrtimer 只触发 threaded poll，SPI 不进原子上下文 |
 | L5 | epoll 服务 | 传感器、timerfd、signalfd 单线程事件循环 |
 
-构建逻辑、代码证据和验证边界分别见 [BUILD_LOGIC.md](docs/BUILD_LOGIC.md)、[INTERVIEW_EVIDENCE.md](docs/INTERVIEW_EVIDENCE.md) 与 [VALIDATION.md](docs/VALIDATION.md)。
+构建逻辑、代码证据和验证边界分别见 [BUILD_LOGIC.md](docs/BUILD_LOGIC.md)、[INTERVIEW_EVIDENCE.md](docs/INTERVIEW_EVIDENCE.md) 与 [VALIDATION.md](docs/VALIDATION.md)。想亲手复现并练习讲解，可按 [L0–L5 动手实验单](docs/LEARNING_LAB.md)逐层操作；其中明确区分无硬件可验证内容与待上板内容。
 
 ## 五项目面试学习入口
 
