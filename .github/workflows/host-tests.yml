@@ -25,6 +25,8 @@ jobs:
           cmake -S . -B build/ci-release -DCMAKE_BUILD_TYPE=Release
           cmake --build build/ci-release --parallel 2
           ctest --test-dir build/ci-release --output-on-failure
+      - name: Reproduce the L0 learning-lab entrypoint
+        run: HOST_BUILD_DIR="$PWD/build/ci-release" ./scripts/validate_userspace.sh
       - name: Check interview handbook and PDF consistency
         run: |
           python -m pip install pypdf
