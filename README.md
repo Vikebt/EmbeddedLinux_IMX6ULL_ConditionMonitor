@@ -15,13 +15,13 @@
 | L4 | IIO 缓冲采样 | hrtimer 只触发 threaded poll，SPI 不进原子上下文 |
 | L5 | epoll 服务 | 传感器、timerfd、signalfd 单线程事件循环 |
 
-构建逻辑、代码证据和验证边界分别见 [BUILD_LOGIC.md](docs/BUILD_LOGIC.md)、[INTERVIEW_EVIDENCE.md](docs/INTERVIEW_EVIDENCE.md) 与 [VALIDATION.md](docs/VALIDATION.md)。
+构建逻辑、代码证据和验证边界分别见 [BUILD_LOGIC.md](docs/BUILD_LOGIC.md)、[INTERVIEW_EVIDENCE.md](docs/INTERVIEW_EVIDENCE.md) 与 [VALIDATION.md](docs/VALIDATION.md)。想亲手复现并练习讲解，可按 [L0–L5 动手实验单](docs/LEARNING_LAB.md)逐层操作；其中明确区分无硬件可验证内容与待上板内容。
 
 ## 五项目面试学习入口
 
 - [模块化五项目面试讲义](docs/interview-handbook/README.md)：216 题分级映射、九段式详解、项目故事、追问树、实验、速记卡和术语表。
 - [PDF 版讲义](output/Five-Project-Embedded-Interview-Handbook.pdf)：适合连续阅读、打印和离线复习。
-- [五项目验证矩阵](docs/FIVE_PROJECT_VALIDATION_MATRIX.md)：区分 `CODE/HOST/CROSS/HIL/TODO-HIL`。
+- [五项目验证矩阵](docs/FIVE_PROJECT_VALIDATION_MATRIX.md)：区分 `CODE/HOST/ROS-BUILD/CROSS/HIL/TODO-HIL`，编译与实机运行不混同。
 - [旧版单文件手册](docs/FIVE_PROJECT_INTERVIEW_HANDBOOK.md)：保留旧链接，作为快速摘要和兼容入口。
 
 讲义的固定版本保存在 [`study-step-7-detailed-handbook`](https://github.com/Vikebt/EmbeddedLinux_IMX6ULL_ConditionMonitor/tree/study-step-7-detailed-handbook/docs/interview-handbook)，日常更新以 `main` 为准。
@@ -57,7 +57,7 @@ file build-arm/apps/conditiond
 
 ## 板端部署顺序
 
-1. 在 vendor 4.1.15 内核合入 `kernel/Kconfig`/`Makefile`，应用 defconfig fragment 与设备树节点，重编内核、DTB 和模块。
+1. 按 [vendor 内核集成指南](deploy/KERNEL_INTEGRATION.md) 在干净副本中接入 `kernel/Kconfig`、应用 defconfig fragment 与设备树节点，重编内核、DTB 和模块；外部模块使用本仓库的 `kernel/Makefile` 构建。
 2. 启动后确认 `/sys/bus/iio/devices/iio:device*/name` 为 `icm20608`。
 3. 交叉编译并安装 `conditiond`，先运行 `conditiond --simulate --samples 200`，再运行真实设备模式。
 4. 完成冷启动、倾斜、两次连续冲击、拔除传感器/停流和长稳测试后，才把 HIL 项标记为通过。

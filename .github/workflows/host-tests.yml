@@ -1,0 +1,33 @@
+name: Host and handbook regressions
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  host-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Debug build and tests
+        run: |
+          cmake -S . -B build/ci-debug -DCMAKE_BUILD_TYPE=Debug
+          cmake --build build/ci-debug --parallel 2
+          ctest --test-dir build/ci-debug --output-on-failure
+      - name: Release build and tests
+        run: |
+          cmake -S . -B build/ci-release -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/ci-release --parallel 2
+          ctest --test-dir build/ci-release --output-on-failure
+      - name: Reproduce the L0 learning-lab entrypoint
+        run: HOST_BUILD_DIR="$PWD/build/ci-release" ./scripts/validate_userspace.sh
+      - name: Check interview handbook and PDF consistency
+        run: |
+          python -m pip install pypdf
+          python scripts/validate_handbook.py

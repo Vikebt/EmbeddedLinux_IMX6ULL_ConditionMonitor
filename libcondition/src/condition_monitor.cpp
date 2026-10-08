@@ -41,6 +41,12 @@ Assessment Monitor::update(const Sample& sample) {
     return last_;
   }
 
+  if (has_sample_ &&
+      sample.timestamp_ns - last_timestamp_ns_ > config_.stale_timeout_ns) {
+    tilt_count_ = 0;
+    impact_count_ = 0;
+  }
+
   next.accel_magnitude_mps2 = std::sqrt(
       sample.accel_x_mps2 * sample.accel_x_mps2 +
       sample.accel_y_mps2 * sample.accel_y_mps2 +
@@ -72,12 +78,15 @@ Assessment Monitor::update(const Sample& sample) {
   return last_;
 }
 
-Assessment Monitor::checkTimeout(std::int64_t now_ns) const {
+Assessment Monitor::checkTimeout(std::int64_t now_ns) {
   Assessment result = last_;
   if (!has_sample_ || now_ns < last_timestamp_ns_ ||
       now_ns - last_timestamp_ns_ > config_.stale_timeout_ns) {
     result.state = State::kSensorFault;
     result.timestamp_ns = now_ns;
+    tilt_count_ = 0;
+    impact_count_ = 0;
+    last_ = result;
   }
   return result;
 }

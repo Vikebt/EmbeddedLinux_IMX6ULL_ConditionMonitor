@@ -57,6 +57,17 @@ int main() {
   result = monitor.update(upright(80'000'000));
   expect(result.state == condition::State::kSensorFault,
          "non-monotonic timestamp is fault");
+
+  condition::Monitor recovered;
+  auto spike = upright(10'000'000);
+  spike.accel_z_mps2 = 25.0;
+  expect(recovered.update(spike).state == condition::State::kNormal,
+         "first spike is not confirmed");
+  expect(recovered.checkTimeout(700'000'001).state == condition::State::kSensorFault,
+         "a long sample gap is a sensor fault");
+  spike.timestamp_ns = 710'000'000;
+  expect(recovered.update(spike).state == condition::State::kNormal,
+         "a spike after a sample gap starts a new confirmation window");
   return failures == 0 ? 0 : 1;
 }
 

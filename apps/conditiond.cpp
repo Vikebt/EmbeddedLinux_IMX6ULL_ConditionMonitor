@@ -1,4 +1,5 @@
 #include "condition/condition_monitor.h"
+#include "iio_adapter/scan_assembler.h"
 #include "iio_adapter/iio_sysfs.h"
 
 #include <array>
@@ -10,7 +11,6 @@
 #include <stdexcept>
 #include <string>
 #include <system_error>
-#include <vector>
 
 #include <fcntl.h>
 #include <sys/epoll.h>
@@ -47,13 +47,6 @@ struct BufferGuard {
   bool enabled{};
   ~BufferGuard() { if (enabled) iio_adapter::disableBuffer(device); }
 };
-
-struct alignas(8) RawScan {
-  std::array<std::uint8_t, 14> sensor;
-  std::array<std::uint8_t, 2> padding;
-  std::int64_t timestamp_ns;
-};
-static_assert(sizeof(RawScan) == 24, "IIO scan layout must be 24 bytes");
 
 std::int64_t realtimeNs() {
   timespec value;
@@ -95,7 +88,7 @@ std::int16_t be16(const std::uint8_t* bytes) {
       (static_cast<std::uint16_t>(bytes[0]) << 8) | bytes[1]);
 }
 
-condition::Sample decode(const RawScan& raw) {
+condition::Sample decode(const iio_adapter::RawScan& raw) {
   constexpr double kAccelScale = 9.80665 / 16384.0;
   constexpr double kGyroScale = 3.14159265358979323846 / (180.0 * 131.0);
   condition::Sample sample{};
@@ -187,7 +180,7 @@ int main(int argc, char** argv) try {
   condition::Monitor monitor;
   condition::State previous = condition::State::kSensorFault;
   std::size_t generated = 0;
-  std::vector<std::uint8_t> pending;
+  iio_adapter::ScanAssembler scans;
   bool running = true;
   while (running) {
     std::array<epoll_event, 4> events;
@@ -226,12 +219,17 @@ int main(int argc, char** argv) try {
         printIfChanged(monitor.update(sample), &previous);
         if (sample_limit != 0 && generated >= sample_limit) running = false;
       } else if (!simulate && fd == sensor_fd.get()) {
-        std::array<std::uint8_t, sizeof(RawScan) * 16> bytes;
+        std::array<std::uint8_t, sizeof(iio_adapter::RawScan) * 16> bytes;
         bytes.fill(0);
-        for (;;) {
+        // Limit one epoll turn: a constantly readable IIO device must not
+        // starve SIGTERM handling or the stale-sensor timer.
+        for (unsigned read_count = 0; read_count < 16; ++read_count) {
           const ssize_t received = ::read(fd, bytes.data(), bytes.size());
           if (received > 0) {
-            pending.insert(pending.end(), bytes.begin(), bytes.begin() + received);
+            scans.append(bytes.data(), static_cast<std::size_t>(received),
+                         [&](const iio_adapter::RawScan& raw) {
+                           printIfChanged(monitor.update(decode(raw)), &previous);
+                         });
           } else if (received < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
             break;
           } else if (received == 0) {
@@ -240,15 +238,6 @@ int main(int argc, char** argv) try {
             throw std::system_error(errno, std::generic_category(), "read IIO device");
           }
         }
-        std::size_t consumed = 0;
-        while (pending.size() - consumed >= sizeof(RawScan)) {
-          RawScan raw;
-          std::memset(&raw, 0, sizeof(raw));
-          std::memcpy(&raw, pending.data() + consumed, sizeof(raw));
-          printIfChanged(monitor.update(decode(raw)), &previous);
-          consumed += sizeof(raw);
-        }
-        if (consumed != 0) pending.erase(pending.begin(), pending.begin() + consumed);
       }
     }
   }
