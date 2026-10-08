@@ -153,11 +153,11 @@ metrics 快照与受控 shutdown
 | 有界队列 | [bounded_queue.h](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/blob/main/src/lslidar_ls_driver/include/lslidar_ls_driver/core/bounded_queue.h) | [study-step-2](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/blob/study-step-2-overload-policy/src/lslidar_ls_driver/include/lslidar_ls_driver/core/bounded_queue.h) |
 | 测试 | [test_bounded_queue.cpp](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/blob/main/src/lslidar_ls_driver/tests/host/test_bounded_queue.cpp) | 同路径 |
 
-证据等级：`CODE`、`HOST`、`ROS-BUILD`；[ROS Noetic 完整 catkin 构建与四组 gtest](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/actions/runs/37119796557)已通过（18 测试、0 失败），ROS 节点运行和 LS1550/Jetson 性能仍为 `TODO-HIL`。
+证据等级：`CODE`、`HOST`、`ROS-BUILD`、`ROS-PROCESS`；[Linux Debug/Release 宿主测试](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/actions/runs/37716921275)各 1/1，[ROS Noetic 完整 catkin 构建与测试](https://github.com/Vikebt/EmbeddedLinux_3DLiDAR_Perception/actions/runs/37716921283)汇总 22 项、0 失败，并完成基础/增强/流水线三类节点的 10 个 SIGINT/SIGTERM 进程用例。回环 UDP 只模拟节点进入活动状态，LS1550/Jetson 吞吐、丢包和功耗仍为 `TODO-HIL`。
 
 ### 30 秒介绍
 
-> 这是 ROS1/PCL 的 LiDAR 数据接入与点云流水线。我重构了 UDP/epoll 生命周期、PCAP 边界检查和并发队列：所有 fd 失败路径可回收，级间队列有容量与 DropOldest/Block 策略，shutdown 进入条件变量谓词，线程可被唤醒并 join。宿主测试覆盖过载和关闭语义，ROS 工程的 18 项算法测试也已通过；没有设备时不声称真实吞吐和丢包率。
+> 这是 ROS1/PCL 的 LiDAR 数据接入与点云流水线。我重构了 UDP/epoll 生命周期、PCAP 边界检查和并发队列：所有 fd 失败路径可回收，级间队列有容量与 DropOldest/Block 策略，shutdown 进入条件变量谓词，线程可被唤醒并 join。宿主测试覆盖过载和关闭语义，ROS 工程 22 项自动测试和三类节点 10 个信号退出用例通过；没有设备时不声称真实吞吐和丢包率。
 
 ### 2 分钟展开
 
@@ -208,7 +208,7 @@ RTSP ----------┘          │
 | RTSP 退避 | [rtsp_capture.cpp](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/blob/main/src/mainwindow/src/rtsp_capture.cpp) | [study-step-2](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/blob/study-step-2-consistent-snapshots/src/mainwindow/src/rtsp_capture.cpp) |
 | 测试 | [host test](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/tree/main/src/mainwindow/tests/host) | 同路径 |
 
-证据等级：`CODE`、`HOST`、`ROS-BUILD`；[Linux Debug/Release 宿主测试](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37121300009)各 3/3（退避、UDP 截断、YAML 回滚），[ROS Noetic/Qt 四包完整 catkin 构建](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37121299927)通过；ROS 节点运行与真实导航源/串口/RTSP 联调仍为 `TODO-HIL`。
+证据等级：`CODE`、`HOST`、`ROS-BUILD`；[Linux Debug/Release 宿主测试](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37716921098)各 4/4（退避、RTSP 配置、UDP 截断、YAML 回滚），[RTSP 安全回归](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37716921100)完成凭据扫描、宿主 3/3 与 ROS 构建，[ROS Noetic/Qt 四包完整 catkin 构建及点云退出排空测试](https://github.com/Vikebt/EmbeddedLinux_MultiSource_OpticalDataFusion/actions/runs/37716921124)通过；ROS 节点运行与真实导航源/串口/RTSP 联调仍为 `TODO-HIL`。
 
 ### 30 秒介绍
 
