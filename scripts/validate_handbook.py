@@ -107,10 +107,16 @@ if "study-step-" not in story:
 if not PDF.is_file() or PDF.stat().st_size < 100_000:
     fail("final PDF is missing or unexpectedly small")
 
+def normalized_source_bytes(path: Path) -> bytes:
+    """Return UTF-8 source bytes with platform-independent line endings."""
+    text = path.read_text(encoding="utf-8")
+    return text.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")
+
+
 digest = hashlib.sha256()
 for source in sources:
     digest.update(source.name.encode("utf-8"))
-    digest.update(source.read_bytes())
+    digest.update(normalized_source_bytes(source))
 reader = PdfReader(PDF)
 if len(reader.pages) < 20:
     fail(f"PDF has too few pages: {len(reader.pages)}")

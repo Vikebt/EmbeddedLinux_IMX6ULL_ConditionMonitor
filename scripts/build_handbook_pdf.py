@@ -53,11 +53,17 @@ SOURCE_FILES = [
 ]
 
 
+def normalized_source_bytes(path: Path) -> bytes:
+    """Return UTF-8 source bytes with platform-independent line endings."""
+    text = path.read_text(encoding="utf-8")
+    return text.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8")
+
+
 def source_digest() -> str:
     digest = hashlib.sha256()
     for filename in SOURCE_FILES:
         digest.update(filename.encode("utf-8"))
-        digest.update((SOURCE_DIR / filename).read_bytes())
+        digest.update(normalized_source_bytes(SOURCE_DIR / filename))
     return digest.hexdigest()
 
 
